@@ -57,15 +57,16 @@ namespace GUI {
 				ImGui_ImplSDL2_ProcessEvent(&event);
 				if (event.type == SDL_JOYBUTTONDOWN) {
 					Uint8 button = event.jbutton.button;
+
 					if (button == SDL_KEY_A) {
 						if (item.state == MENU_STATE_FILEBROWSER) {
 							if (item.entries[item.selected].type == FsDirEntryType_Dir) {
 								if (item.entries.size() != 0) {
 									if (R_SUCCEEDED(FS::ChangeDirNext(item.entries[item.selected].name, item.entries))) {
 										// Make a copy before resizing our vector.
-										if (item.checked_count > 1)
+										if ((item.checked_count > 1) && (item.checked_copy.empty()))
 											item.checked_copy = item.checked;
-											
+										
 										item.checked.resize(item.entries.size());
 										GImGui->NavId = 0;
 									}
@@ -95,6 +96,7 @@ namespace GUI {
 									
 								item.textures.clear();
 								item.frame_count = 0;
+								item.zoom_factor = 1.0f;
 								item.state = MENU_STATE_FILEBROWSER;
 							}
 						}
@@ -140,6 +142,23 @@ namespace GUI {
 						item.state = MENU_STATE_SETTINGS;
 					else if (button == SDL_KEY_PLUS)
 						done = true;
+					// TODO fix this so that it's continous or just scrap SDL events
+					else if (button == SDL_KEY_LSTICK_DOWN) {
+						if (item.state == MENU_STATE_IMAGEVIEWER) {
+							item.zoom_factor -= 0.5f * ImGui::GetIO().DeltaTime;
+							
+							if (item.zoom_factor < 0.1f)
+								item.zoom_factor = 0.1f;
+						}
+					}
+					else if (button == SDL_KEY_LSTICK_UP) {
+						if (item.state == MENU_STATE_IMAGEVIEWER) {
+							item.zoom_factor += 0.5f * ImGui::GetIO().DeltaTime;
+							
+							if (item.zoom_factor > 5.0f)
+								item.zoom_factor = 5.0f;
+						}
+					}
 				}
 				
 				if (event.type == SDL_QUIT)
