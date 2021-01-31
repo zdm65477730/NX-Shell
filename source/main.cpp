@@ -128,17 +128,17 @@ namespace Services {
 		ImGui_ImplOpenGL3_Init(glsl_version);
 
 		Result ret = 0;
-		PlFontData standard, s_chinese, t_chinese, korean;
+		PlFontData standard, s_chinese/*, t_chinese, korean*/;
 		if (R_FAILED(ret = plGetSharedFontByType(&standard, PlSharedFontType_Standard))) {
 			Log::Error("plGetSharedFontByType(PlSharedFontType_Standard) failed: 0x%x\n", ret);
 			return ret;
 		}
 
-		if (R_FAILED(ret = plGetSharedFontByType(&s_chinese, PlSharedFontType_ChineseSimplified))) {
+		if (R_FAILED(ret = plGetSharedFontByType(&s_chinese, io.Fonts->GetGlyphRangesChineseSimplifiedCommon))) {
 			Log::Error("plGetSharedFontByType(PlSharedFontType_ChineseSimplified) failed: 0x%x\n", ret);
 			return ret;
 		}
-
+#if 0
 		if (R_FAILED(ret = plGetSharedFontByType(&t_chinese, PlSharedFontType_ChineseTraditional))) {
 			Log::Error("plGetSharedFontByType(PlSharedFontType_ChineseTraditional) failed: 0x%x\n", ret);
 			return ret;
@@ -148,7 +148,7 @@ namespace Services {
 			Log::Error("plGetSharedFontByType(PlSharedFontType_KO) failed: 0x%x\n", ret);
 			return ret;
 		}
-		
+#endif
 		unsigned char *pixels = nullptr;
 		int width = 0, height = 0, bpp = 0;
 		ImFontConfig font_cfg;
@@ -158,8 +158,8 @@ namespace Services {
 		font_cfg.MergeMode = true;
 		
 		io.Fonts->AddFontFromMemoryTTF(s_chinese.address, s_chinese.size, 24.0f, &font_cfg, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
-		io.Fonts->AddFontFromMemoryTTF(korean.address, korean.size, 24.0f, &font_cfg, io.Fonts->GetGlyphRangesKorean());
-		io.Fonts->AddFontFromMemoryTTF(t_chinese.address, t_chinese.size, 24.0f, &font_cfg, io.Fonts->GetGlyphRangesChineseFull());
+		//io.Fonts->AddFontFromMemoryTTF(korean.address, korean.size, 24.0f, &font_cfg, io.Fonts->GetGlyphRangesKorean());
+		//io.Fonts->AddFontFromMemoryTTF(t_chinese.address, t_chinese.size, 24.0f, &font_cfg, io.Fonts->GetGlyphRangesChineseFull());
 		
 		// build font atlas
 		io.Fonts->GetTexDataAsAlpha8(&pixels, &width, &height, &bpp);
