@@ -134,7 +134,7 @@ namespace Services {
 			return ret;
 		}
 
-		if (R_FAILED(ret = plGetSharedFontByType(&s_chinese, PlSharedFontType_ChineseSimplified)) {
+		if (R_FAILED(ret = plGetSharedFontByType(&s_chinese, PlSharedFontType_ChineseSimplified))) {
 			Log::Error("plGetSharedFontByType(PlSharedFontType_ChineseSimplified) failed: 0x%x\n", ret);
 			return ret;
 		}
