@@ -76,7 +76,7 @@ CXXFLAGS	:= $(CFLAGS) -std=gnu++20 -fno-exceptions -fno-rtti
 ASFLAGS	:=	-g $(ARCH)
 LDFLAGS	=	-specs=$(DEVKITPRO)/libnx/switch.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
-LIBS	:=	lcurl -lssl -lcrypto -lfreetype -lgif -lturbojpeg -ljpeg -lpng -lwebp -ljansson \
+LIBS	:=	-lfreetype -lharfbuzz -lbz2 -lcurl -lgif -lturbojpeg -ljpeg -lpng -lwebp -ljansson \
 		-lglad -lEGL -lglapi -ldrm_nouveau -lusbhsfs -llwext4 -lntfs-3g -lnx -lm -lz
 
 #---------------------------------------------------------------------------------
