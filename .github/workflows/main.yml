@@ -12,13 +12,6 @@ jobs:
     if: contains(github.event.comment.body, '/release-action')
 
     steps:
-      - name: Update packages
-        run: |
-          sudo -n apt-get update
-          sudo -n apt-get upgrade -y git build-essential
-          sudo -n apt-get install -y zip python3 python3-pip python3-lz4
-          sudo update-alternatives --install /usr/bin/python python /usr/bin/python3.9 1
-        shell: bash
       - name: Update latest libnx
         run: |
           git config --global --add safe.directory "*"
@@ -27,7 +20,7 @@ jobs:
           make install -j$(nproc)
         shell: bash
       - name: Checkout latest code
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5
         with:
           ref: next-opengl3
           clean: true
@@ -38,7 +31,7 @@ jobs:
         run: |
           VER_FILE=Makefile
           APP_NAME=$(awk '/^APP_TITLE/{print $3}' $VER_FILE)
-          VERSION=$(awk '/^APP_VERSION/{print $3}' $VER_FILE)
+          VERSION=v$(awk '/^VERSION_MAJOR/{print $3}' $VER_FILE).$(awk '/^VERSION_MINOR/{print $3}' $VER_FILE).$(awk '/^VERSION_MICRO/{print $3}' $VER_FILE)
           echo "TAG=v${VERSION}" >> "${GITHUB_ENV}"
           echo "APP_NAME=${APP_NAME}" >> "${GITHUB_ENV}"
           echo "RELEASE_NAME=${APP_NAME} ${VERSION}" >> "${GITHUB_ENV}"
