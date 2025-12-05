@@ -120,7 +120,7 @@ namespace Tabs {
             ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
             ImGui::Text("Dear ImGui %s: %s", strings[cfg.lang][Lang::SettingsAboutVersion], ImGui::GetVersion());
             ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
-            ImGui::Text("%s: Joel16", strings[cfg.lang][Lang::SettingsAboutAuthor]);
+            ImGui::Text("%s: " AUTHOR, strings[cfg.lang][Lang::SettingsAboutAuthor]);
             ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
             ImGui::Text("%s: Preetisketch", strings[cfg.lang][Lang::SettingsAboutBanner]);
             ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
