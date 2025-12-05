@@ -293,13 +293,13 @@ public:
     void UpdateStatusBar() {
         int line, col;
         GetCursorPosition(line, col);
-        std::string status = "Line: " + std::to_string(line) + 
-                            " Col: " + std::to_string(col) + 
-                            " | View: " + std::to_string(scroll_line) + "-" + std::to_string(scroll_line + visible_lines - 1) +
-                            " | Modified: " + (is_modified ? "Yes" : "No") +
-                            " | Mode: " + (overwrite_mode ? "Overwrite" : "Insert") +
-                            " | Select: " + (is_selecting ? "ON" : "OFF") +
-                            " | Caps: " + (caps_lock ? "ON" : "OFF");
+        std::string status = strings[cfg.lang][Lang::TextEditorStatusLine] + std::to_string(line) +
+                            strings[cfg.lang][Lang::TextEditorStatusCol] + std::to_string(col) +
+                            strings[cfg.lang][Lang::TextEditorStatusView] + std::to_string(scroll_line) + "-" + std::to_string(scroll_line + visible_lines - 1) +
+                            strings[cfg.lang][Lang::TextEditorStatusModified] + (is_modified ? strings[cfg.lang][Lang::CommonYes] : strings[cfg.lang][Lang::CommonNo]) +
+                            strings[cfg.lang][Lang::TextEditorStatusMode] + (overwrite_mode ? strings[cfg.lang][Lang::CommonOverwrite] : strings[cfg.lang][Lang::CommonInsert]) +
+                            strings[cfg.lang][Lang::TextEditorStatusSelect] + (is_selecting ? strings[cfg.lang][Lang::CommonOn] : strings[cfg.lang][Lang::CommonOff]) +
+                            strings[cfg.lang][Lang::TextEditorStatusCaps] + (caps_lock ? strings[cfg.lang][Lang::CommonOn] : strings[cfg.lang][Lang::CommonOff]);
         TextEditor::SetStatus(status, true);
     }
 
@@ -562,7 +562,7 @@ namespace TextEditor {
     static bool custom_status = false;                // Custom status message flag
     static std::chrono::steady_clock::time_point status_timeout;  // Status message timeout
 
-    static bool is_keyboard_popup = false;            // Virtual keyboard active flag
+    static bool is_keyboard_showing = false;          // Virtual keyboard active flag
     static bool first_load = true;                    // First load initialization flag
     static int saved_scroll_line = 1;                 // Saved scroll position for edit mode
     static int saved_cursor_line = 1;                 // Saved cursor line for edit mode
@@ -575,11 +575,11 @@ namespace TextEditor {
         if (current_editor) delete current_editor;
         file_path = path;
         current_editor = new Editor(path);
-        status_message = "Ready - Loaded: " + path;
+        status_message = "";
         custom_status = false;
         status_timeout = std::chrono::steady_clock::now() + std::chrono::seconds(3);
 
-        is_keyboard_popup = false;
+        is_keyboard_showing = false;
         a_key_held = false;
         saved_scroll_line = 1;
         saved_cursor_line = 1;
@@ -619,50 +619,44 @@ namespace TextEditor {
         // A button handling
         bool a_key_pressed = (key & HidNpadButton_A) && !a_key_held;
         a_key_held = (key & HidNpadButton_A) ? true : false;
-
-        if (a_key_pressed && !is_keyboard_popup) {
+        if (a_key_pressed && !is_keyboard_showing) {
             saved_scroll_line = current_editor->scroll_line;
             int cursor_line, cursor_col;
             current_editor->GetCursorPosition(cursor_line, cursor_col);
             saved_cursor_line = cursor_line;
-    
-            is_keyboard_popup = true;
-    
+
+            is_keyboard_showing = true;
             int line, col;
             current_editor->GetCursorPosition(line, col);
             int line_start = current_editor->GetLineStartPos(line);
             int line_end = current_editor->GetLineEndPos(line);
             std::string initial_text = current_editor->text.substr(line_start, line_end - line_start);
-    
-            std::string input = Keyboard::GetText("Edit line " + std::to_string(line), initial_text);
-    
-            is_keyboard_popup = false;
-    
+
+            // Show system virtual keyboard for input
+            std::string input = Keyboard::GetText(strings[cfg.lang][Lang::TextEditorEditLine], initial_text);
+            is_keyboard_showing = false;
+
             current_editor->MoveToLine(saved_cursor_line);
             current_editor->scroll_line = saved_scroll_line;
             current_editor->SyncScroll(true);
-    
+
             ImVec2 contentSize = ImGui::GetContentRegionAvail();
             contentSize.y -= 40;
             float line_height = ImGui::GetTextLineHeight();
             current_editor->visible_lines = std::max(1, (int)(contentSize.y / line_height));
-    
-            if (!input.empty() && input != strings[cfg.lang][Lang::KeyboardEmpty]) {
+
+            if (!input.empty()) {
                 current_editor->ReplaceCurrentLine(line, input);
-                SetStatus("Updated line " + std::to_string(line), true);
-            } else {
-                SetStatus("Cancel edit", true);
             }
-    
             key = 0;
             return;
         }
 
-        if (!is_keyboard_popup) {
+        if (!is_keyboard_showing) {
             // Standard input handling
             if (key & HidNpadButton_Minus) {
                 if (current_editor->is_modified) {
-                    SetStatus("Unsaved changes! Press Minus again to exit", true);
+                    SetStatus(strings[cfg.lang][Lang::TextEditorStatusChangesUnsaved], true);
                     static bool confirm_exit = false;
                     if (confirm_exit) {
                         Shutdown();
@@ -685,12 +679,12 @@ namespace TextEditor {
             if (key & HidNpadButton_Plus) {
                 if (current_editor->is_modified) {
                     if (current_editor->Save(file_path)) {
-                        SetStatus("Saved successfully: " + file_path);
+                        SetStatus(strings[cfg.lang][Lang::TextEditorStatusSaved] + file_path);
                     } else {
-                        SetStatus("ERROR: Failed to save file!", true);
+                        SetStatus(strings[cfg.lang][Lang::TextEditorStatusSaveFailed], true);
                     }
                 } else {
-                    SetStatus("No changes to save");
+                    SetStatus(strings[cfg.lang][Lang::TextEditorStatusNoChangesToSave]);
                 }
             }
 
@@ -698,74 +692,78 @@ namespace TextEditor {
                 std::string selected = current_editor->GetSelectedText();
                 if (!selected.empty()) {
                     current_editor->CopySelectedText();
-                    SetStatus("Copied " + std::to_string(selected.length()) + " characters");
+                    SetStatus(strings[cfg.lang][Lang::TextEditorStatusCopiedCharacters] + std::to_string(selected.length()));
                 } else {
-                    SetStatus("No text selected to copy", true);
+                    SetStatus(strings[cfg.lang][Lang::TextEditorStatusNoTextToCopy], true);
                 }
             }
 
             if ((key & HidNpadButton_Y) && (key & HidNpadButton_L)) {
                 if (!current_editor->clipboard.empty()) {
                     current_editor->PasteFromClipboard();
-                    SetStatus("Pasted from clipboard");
+                    SetStatus(strings[cfg.lang][Lang::TextEditorStatusPasted]);
                 } else {
-                    SetStatus("Clipboard is empty", true);
+                    SetStatus(strings[cfg.lang][Lang::TextEditorStatusClipboardEmpty], true);
                 }
             }
 
+            // Undo - ZL button
             if (key & HidNpadButton_ZL) {
                 if (current_editor->Undo()) {
-                    SetStatus("Undo successful");
+                    SetStatus(strings[cfg.lang][Lang::TextEditorStatusUndoSuccessful]);
                 } else {
-                    SetStatus("Nothing to undo");
+                    SetStatus(strings[cfg.lang][Lang::TextEditorStatusNothingToUndo]);
                 }
             }
 
+            // Redo - ZR button
             if (key & HidNpadButton_ZR) {
                 if (current_editor->Redo()) {
-                    SetStatus("Redo successful");
+                    SetStatus(strings[cfg.lang][Lang::TextEditorStatusRedoSuccessful]);
                 } else {
-                    SetStatus("Nothing to redo");
+                    SetStatus(strings[cfg.lang][Lang::TextEditorStatusNothingToRedo]);
                 }
             }
 
             if (key & HidNpadButton_L && !(key & HidNpadButton_X) && !(key & HidNpadButton_Y)) {
-                std::string input = Keyboard::GetText("Find text:", current_editor->find_text);
+                // Show virtual keyboard for find text input
+                std::string input = Keyboard::GetText(strings[cfg.lang][Lang::TextEditorStatusFindText], current_editor->find_text);
                 if (!input.empty()) {
                     current_editor->find_text = input;
                     current_editor->find_pos = current_editor->cursor_pos;
                     current_editor->find_active = true;
                     if (current_editor->FindNext()) {
-                        SetStatus("Found: \"" + input + "\"");
+                        SetStatus(strings[cfg.lang][Lang::TextEditorStatusTextFound] + input + "\"");
                     } else {
-                        SetStatus("\"" + input + "\" not found", true);
+                        SetStatus("\"" + input + strings[cfg.lang][Lang::TextEditorStatusTextNotFound], true);
                     }
                 }
             }
 
+            // Select - R button
             if (key & HidNpadButton_R) {
                 current_editor->ToggleSelectMode();
-                SetStatus(current_editor->is_selecting ? "Select mode ON" : "Select mode OFF");
+                SetStatus(current_editor->is_selecting ? strings[cfg.lang][Lang::TextEditorStatusSelectModeOn] : strings[cfg.lang][Lang::TextEditorStatusSelectModeOff]);
             }
 
             if (key & HidNpadButton_B) {
                 if (current_editor->is_selecting && current_editor->start_select_pos != current_editor->end_select_pos) {
                     current_editor->DeleteSelectedText();
-                    SetStatus("Deleted selected text");
+                    SetStatus(strings[cfg.lang][Lang::TextEditorStatusDeletedSelectedText]);
                 } else {
                     current_editor->DeleteBackward();
-                    SetStatus("Backspace (deleted previous character)");
+                    SetStatus(strings[cfg.lang][Lang::TextEditorStatusDeletedPreCharacter]);
                 }
             }
 
             if ((key & HidNpadButton_B) && (key & HidNpadButton_ZR)) {
                 current_editor->DeleteForward();
-                SetStatus("Deleted forward character");
+                SetStatus(strings[cfg.lang][Lang::TextEditorStatusDeleteForwardCharacter]);
             }
 
             if ((key & HidNpadButton_Down) && (key & HidNpadButton_A)) {
                 current_editor->InsertNewLine();
-                SetStatus("Inserted new line");
+                SetStatus(strings[cfg.lang][Lang::TextEditorStatusInsertNewLine]);
             }
 
             // Direction keys (Step = ±1) - Basic implementation without acceleration
@@ -804,7 +802,7 @@ namespace TextEditor {
 
                 current_editor->SyncScroll(true);
                 current_editor->UpdateStatusBar();
-                SetStatus("Scroll up to line: " + std::to_string(actual_line), false);
+                SetStatus(strings[cfg.lang][Lang::TextEditorStatusScrollUpToLine] + std::to_string(actual_line), false);
             }
 
             // Fix: Joystick Down Scroll - Boundary check first, then position, show actual cursor position
@@ -826,7 +824,7 @@ namespace TextEditor {
 
                 current_editor->SyncScroll(true);
                 current_editor->UpdateStatusBar();
-                SetStatus("Scroll down to line: " + std::to_string(actual_line), false);
+                SetStatus(strings[cfg.lang][Lang::TextEditorStatusScrollDownToLine] + std::to_string(actual_line), false);
             }
 
             if (custom_status && std::chrono::steady_clock::now() > status_timeout) {
@@ -869,7 +867,7 @@ namespace Windows {
                 ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), TextEditor::file_path.c_str());
                 ImGui::SameLine(window_width * 0.5f);
                 ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), 
-                    "| \uE0EF Save | \uE0F0 Exit | \uE0E0 Edit | \uE0E1 Delete | \uE0E6 Undo | \uE0E7 Redo |");
+                strings[cfg.lang][Lang::TextEditorControls]);
             }
 
             ImGui::Separator();
@@ -946,7 +944,7 @@ namespace Windows {
                         draw_list->AddRectFilled(
                             ImVec2(cursor_x, cursor_y),
                             ImVec2(cursor_x + 2, cursor_y + line_height),
-                            ImColor(0.2f, 0.4f, 0.9f, alpha)
+                            ImColor(0.1f, 0.7f, 0.6f, alpha)
                         );
                     }
 

@@ -86,6 +86,48 @@ namespace Lang {
         // Keyboard
         KeyboardEmpty,
 
+        // Common words
+        CommonYes,
+        CommonNo,
+        CommonOverwrite,
+        CommonInsert,
+        CommonOn,
+        CommonOff,
+
+        // Text Editor
+        TextEditorStatusLine,
+        TextEditorStatusCol,
+        TextEditorStatusView,
+        TextEditorStatusModified,
+        TextEditorStatusMode,
+        TextEditorStatusSelect,
+        TextEditorStatusCaps,
+        TextEditorEditLine,
+        TextEditorStatusChangesUnsaved,
+        TextEditorStatusSaved,
+        TextEditorStatusSaveFailed,
+        TextEditorStatusNoChangesToSave,
+        TextEditorStatusCopiedCharacters,
+        TextEditorStatusNoTextToCopy,
+        TextEditorStatusPasted,
+        TextEditorStatusClipboardEmpty,
+        TextEditorStatusUndoSuccessful,
+        TextEditorStatusNothingToUndo,
+        TextEditorStatusRedoSuccessful,
+        TextEditorStatusNothingToRedo,
+        TextEditorStatusFindText,
+        TextEditorStatusTextFound,
+        TextEditorStatusTextNotFound,
+        TextEditorStatusSelectModeOn,
+        TextEditorStatusSelectModeOff,
+        TextEditorStatusDeletedSelectedText,
+        TextEditorStatusDeletedPreCharacter,
+        TextEditorStatusDeleteForwardCharacter,
+        TextEditorStatusInsertNewLine,
+        TextEditorStatusScrollUpToLine,
+        TextEditorStatusScrollDownToLine,
+        TextEditorControls,
+
         // Max
         Max
     } StringID;
