@@ -15,7 +15,7 @@ enum WINDOW_STATES {
     WINDOW_STATE_PROPERTIES,
     WINDOW_STATE_IMAGEVIEWER,
     WINDOW_STATE_ARCHIVEEXTRACT,
-    WINDOW_STATE_TEXTREADER
+    WINDOW_STATE_TEXTEDITOR
 };
 
 enum FS_SORT_STATE {
@@ -63,10 +63,19 @@ namespace ImageViewer {
     void HandleControls(u64 &key, bool &properties);
 }
 
+// TextEditor function declarations
+namespace TextEditor {
+    void Initialize(const std::string& path);
+    void HandleInput(u64& key);
+    void Shutdown(void);
+    void SetStatus(const std::string& msg, bool custom = true);
+}
+
 namespace Windows {
     void SetupWindow(void);
     void ExitWindow(void);
     void ResetCheckbox(WindowData &data);
     void MainWindow(WindowData &data, u64 &key, bool progress);
     void ImageViewer(bool &properties, bool &file_stat);
+    void TextEditor();
 }

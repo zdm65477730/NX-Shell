@@ -85,11 +85,11 @@ int main(int argc, char* argv[]) {
         Services::Exit();
         return 0;
     }
-    
+
     data.checkbox_data.checked.resize(data.entries.size());
     FS::GetUsedStorageSpace(data.used_storage);
     FS::GetTotalStorageSpace(data.total_storage);
-    
+
     while (GUI::Loop(key)) {
         Windows::MainWindow(data, key, false);
         GUI::Render();

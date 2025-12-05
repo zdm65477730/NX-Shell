@@ -14,7 +14,11 @@ namespace GUI {
     static EGLDisplay s_display = EGL_NO_DISPLAY;
     static EGLContext s_context = EGL_NO_CONTEXT;
     static EGLSurface s_surface = EGL_NO_SURFACE;
-    
+
+    // Text editor mode control (core for key conflict fix)
+    static bool s_is_text_editor_active = false;
+    static bool s_text_editor_quit_requested = false;
+
     static bool InitEGL(NWindow* win) {
         s_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
         
@@ -158,8 +162,6 @@ namespace GUI {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGuiIO &io = ImGui::GetIO();
-        (void)io;
-        
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
         
         if (!GUI::InitEGL(nwindowGetDefault()))
@@ -168,11 +170,11 @@ namespace GUI {
         gladLoadGL();
         
         ImGui_ImplSwitch_Init("#version 130");
-        
+
         // Load nintendo font
         PlFontData standard, extended, schinese, korean, tchinese;
         static ImWchar extended_range[] = {0xE000, 0xE152};
-        
+
         if (R_SUCCEEDED(plGetSharedFontByType(std::addressof(standard), PlSharedFontType_Standard)) &&
             R_SUCCEEDED(plGetSharedFontByType(std::addressof(extended), PlSharedFontType_NintendoExt)) &&
             R_SUCCEEDED(plGetSharedFontByType(std::addressof(schinese), PlSharedFontType_ChineseSimplified)) &&
@@ -182,7 +184,7 @@ namespace GUI {
             u8 *px = nullptr;
             int w = 0, h = 0, bpp = 0;
             ImFontConfig font_cfg;
-            
+
             font_cfg.FontDataOwnedByAtlas = false;
             io.Fonts->AddFontFromMemoryTTF(standard.address, standard.size, 20.f, std::addressof(font_cfg), io.Fonts->GetGlyphRangesDefault());
 
@@ -208,13 +210,37 @@ namespace GUI {
         return true;
     }
     
+    // Helper: Activate/deactivate text editor mode
+    void SetTextEditorActive(bool active) {
+        s_is_text_editor_active = active;
+        s_text_editor_quit_requested = false;
+    }
+
+    // Helper: Trigger exit from text editor
+    void RequestTextEditorQuit() {
+        s_text_editor_quit_requested = true;
+    }
+
+    // Helper: Reset text editor quit state
+    void ResetTextEditorQuit() {
+        s_text_editor_quit_requested = false;
+    }
+
     bool Loop(u64 &key) {
         if (!appletMainLoop())
             return false;
-        
+
         key = ImGui_ImplSwitch_NewFrame();
         ImGui::NewFrame();
-        return !(key & HidNpadButton_Plus);
+
+        // Dynamic exit logic:
+        // - Text editor mode: Exit only when editor requests it (ignore global Plus key)
+        // - Default mode: Original behavior (exit on Plus key)
+        if (s_is_text_editor_active) {
+            return !s_text_editor_quit_requested;
+        } else {
+            return !(key & HidNpadButton_Plus);
+        }
     }
     
     void Render(void) {

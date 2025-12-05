@@ -50,20 +50,20 @@ namespace Windows {
             case WINDOW_STATE_OPTIONS:
                 Popups::OptionsPopup(data);
                 break;
-
             case WINDOW_STATE_PROPERTIES:
                 Popups::FilePropertiesPopup(data, file_stat);
                 break;
-            
             case WINDOW_STATE_DELETE:
                 Popups::DeletePopup(data);
                 break;
-
             case WINDOW_STATE_IMAGEVIEWER:
                 Windows::ImageViewer(image_properties, file_stat);
                 ImageViewer::HandleControls(key, image_properties);
                 break;
-
+            case WINDOW_STATE_TEXTEDITOR:
+                Windows::TextEditor();
+                TextEditor::HandleInput(key);
+                break;
             default:
                 break;
         }
@@ -88,16 +88,14 @@ namespace Windows {
                 case WINDOW_STATE_OPTIONS:
                     data.state = WINDOW_STATE_FILEBROWSER;
                     break;
-
                 case WINDOW_STATE_PROPERTIES:
                     data.state = WINDOW_STATE_OPTIONS;
                     file_stat = false;
                     break;
-                
+
                 case WINDOW_STATE_DELETE:
                     data.state = WINDOW_STATE_OPTIONS;
                     break;
-
                 case WINDOW_STATE_IMAGEVIEWER:
                     if (image_properties) {
                         image_properties = false;
@@ -107,12 +105,16 @@ namespace Windows {
                         ImageViewer::ClearTextures();
                         data.state = WINDOW_STATE_FILEBROWSER;
                     }
-                    
                     break;
-
+                case WINDOW_STATE_TEXTEDITOR:
+                    TextEditor::Shutdown();
+                    data.state = WINDOW_STATE_FILEBROWSER;
+                    break;
                 default:
                     break;
             }
         }
+
+        key = 0;
     }
 }
