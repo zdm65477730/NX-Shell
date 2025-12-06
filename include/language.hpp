@@ -102,7 +102,10 @@ namespace Lang {
         TextEditorStatusMode,
         TextEditorStatusSelect,
         TextEditorStatusCaps,
+        TextEditorStatusFileOpened,
         TextEditorEditLine,
+        TextEditorUpdatedLine,
+        TextEditorCancelEdit,
         TextEditorStatusChangesUnsaved,
         TextEditorStatusSaved,
         TextEditorStatusSaveFailed,
@@ -124,8 +127,6 @@ namespace Lang {
         TextEditorStatusDeletedPreCharacter,
         TextEditorStatusDeleteForwardCharacter,
         TextEditorStatusInsertNewLine,
-        TextEditorStatusScrollUpToLine,
-        TextEditorStatusScrollDownToLine,
         TextEditorControls,
 
         // Max

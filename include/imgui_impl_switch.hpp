@@ -25,6 +25,8 @@
 // Backend API
 IMGUI_IMPL_API bool ImGui_ImplSwitch_Init(const char *glsl_version = nullptr);
 IMGUI_IMPL_API void ImGui_ImplSwitch_Shutdown(void);
+IMGUI_IMPL_API PadState* ImGui_ImplSwitch_GetBackendPadState(void);
+IMGUI_IMPL_API u64 ImGui_ImplSwitch_UpdateGamepads(void);
 IMGUI_IMPL_API u64 ImGui_ImplSwitch_NewFrame(void);
 IMGUI_IMPL_API void ImGui_ImplSwitch_RenderDrawData(ImDrawData *draw_data);
 

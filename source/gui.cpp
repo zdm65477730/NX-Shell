@@ -17,7 +17,6 @@ namespace GUI {
 
     // Text editor mode control (core for key conflict fix)
     static bool s_is_text_editor_active = false;
-    static bool s_text_editor_quit_requested = false;
 
     static bool InitEGL(NWindow* win) {
         s_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -213,17 +212,6 @@ namespace GUI {
     // Helper: Activate/deactivate text editor mode
     void SetTextEditorActive(bool active) {
         s_is_text_editor_active = active;
-        s_text_editor_quit_requested = false;
-    }
-
-    // Helper: Trigger exit from text editor
-    void RequestTextEditorQuit() {
-        s_text_editor_quit_requested = true;
-    }
-
-    // Helper: Reset text editor quit state
-    void ResetTextEditorQuit() {
-        s_text_editor_quit_requested = false;
     }
 
     bool Loop(u64 &key) {
@@ -237,7 +225,7 @@ namespace GUI {
         // - Text editor mode: Exit only when editor requests it (ignore global Plus key)
         // - Default mode: Original behavior (exit on Plus key)
         if (s_is_text_editor_active) {
-            return !s_text_editor_quit_requested;
+            return true;
         } else {
             return !(key & HidNpadButton_Plus);
         }

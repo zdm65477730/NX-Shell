@@ -3,7 +3,7 @@
 #include "language.hpp"
 
 // Japanese
-static const char *strings_jp[] {
+static const char* strings_jp[] = {
     "OK",
     "キャンセル",
 
@@ -89,40 +89,41 @@ static const char *strings_jp[] {
     "行: ",
     " 列: ",
     " | 表示: ",
-    " | 変更: ",
+    " | 更新: ",
     " | モード: ",
     " | 選択: ",
-    " | キャップスロック: ",
+    " | Caps: ",
 
-    "行を編集 ",
-    "未保存の変更があります！もう一度マイナスキーを押して終了",
+    "ファイル読み込み完了: ",
+    "行編集: ",
+    "行更新: ",
+    "編集をキャンセル",
+    "保存されていない変更があります！もう一度マイナスボタンを押すと終了します",
     "正常に保存されました: ",
-    "エラー：ファイルの保存に失敗しました！",
-    "保存する変更がありません",
+    "エラー: ファイルの保存に失敗しました!",
+    "保存する変更はありません",
     "コピーされた文字: ",
     "コピーするテキストが選択されていません",
     "クリップボードから貼り付け",
-    "クリップボードが空です",
-    "元に戻すが成功しました",
-    "元に戻すものがありません",
-    "やり直しが成功しました",
-    "やり直すものがありません",
-    "テキストを検索:",
+    "クリップボードは空です",
+    "元に戻す成功",
+    "元に戻す操作がありません",
+    "やり直し成功",
+    "やり直す操作がありません",
+    "テキスト検索:",
     "見つかりました: \"",
-    "\" が見つかりません",
+    "\" 見つかりません",
     "選択モード オン",
     "選択モード オフ",
-    "選択されたテキストが削除されました",
-    "バックスペース（前の文字が削除されました）",
-    "次の文字が削除されました",
-    "新しい行が挿入されました",
-    "行まで上にスクロール：",
-    "行まで下にスクロール：",
-    "| \uE0EF 保存 | \uE0F0 終了 | \uE0E0 編集 | \uE0E1 削除 | \uE0E6 元に戻す | \uE0E7 やり直す |",
+    "選択されたテキストを削除しました",
+    "バックスペース (前の文字を削除)",
+    "次の文字を削除",
+    "新しい行を挿入",
+    "| \uE0EF 保存 | \uE0F0 終了 | \uE0E0 編集 | \uE0E1 削除 | \uE0E6 元に戻す | \uE0E7 やり直す | \uE0E4+\uE0ED/\uE0EE 選択 | \uE0E2 コピー | \uE0E3 貼り付け | \uE0E5 検索 \uE0E5+\uE0EE/\uE0ED 次へ/前へ |",
 };
 
 // English
-static const char *strings_en[] {
+static const char* strings_en[] = {
     "OK",
     "Cancel",
 
@@ -213,7 +214,10 @@ static const char *strings_en[] {
     " | Select: ",
     " | Caps: ",
 
-    "Edit line ",
+    "File loaded: ", // 保持英文
+    "Edit line: ",
+    "Updated line: ",
+    "Cancel edit",
     "Unsaved changes! Press Minus again to exit",
     "Saved successfully: ",
     "ERROR: Failed to save file!",
@@ -235,13 +239,11 @@ static const char *strings_en[] {
     "Backspace (deleted previous character)",
     "Deleted forward character",
     "Inserted new line",
-    "Scroll up to line: ",
-    "Scroll down to line: ",
-    "| \uE0EF Save | \uE0F0 Exit | \uE0E0 Edit | \uE0E1 Delete | \uE0E6 Undo | \uE0E7 Redo |",
+    "| \uE0EF Save | \uE0F0 Exit | \uE0E0 Edit | \uE0E1 Delete | \uE0E6 Undo | \uE0E7 Redo | \uE0E4+\uE0ED/\uE0EE Select | \uE0E2 Copy | \uE0E3 Paste | \uE0E5 Search \uE0E5+\uE0EE/\uE0ED Next/Previous |",
 };
 
 // French
-static const char *strings_fr[] {
+static const char* strings_fr[] = {
     "OK",
     "Annuler",
 
@@ -332,7 +334,10 @@ static const char *strings_fr[] {
     " | Sélection: ",
     " | Majuscules: ",
 
-    "Modifier la ligne ",
+    "Fichier chargé: ",
+    "Modifier la ligne: ",
+    "Ligne mise à jour : ",
+    "Annuler l'édition",
     "Modifications non enregistrées ! Appuyez à nouveau sur Moins pour quitter",
     "Enregistré avec succès : ",
     "ERREUR : Échec de l'enregistrement du fichier !",
@@ -354,13 +359,11 @@ static const char *strings_fr[] {
     "Retour arrière (caractère précédent supprimé)",
     "Caractère suivant supprimé",
     "Nouvelle ligne insérée",
-    "Faire défiler vers le haut jusqu'à la ligne : ",
-    "Faire défiler vers le bas jusqu'à la ligne : ",
-    "| \uE0EF Sauvegarder | \uE0F0 Quitter | \uE0E0 Éditer | \uE0E1 Supprimer | \uE0E6 Annuler | \uE0E7 Rétablir |",
+    "| \uE0EF Enregistrer | \uE0F0 Quitter | \uE0E0 Modifier | \uE0E1 Supprimer | \uE0E6 Annuler | \uE0E7 Rétablir | \uE0E4+\uE0ED/\uE0EE Sélectionner | \uE0E2 Copier | \uE0E3 Coller | \uE0E5 Rechercher \uE0E5+\uE0EE/\uE0ED Suivant/Précédent |",
 };
 
 // German
-static const char *strings_de[] {
+static const char* strings_de[] = {
     "OK",
     "Abbrechen",
 
@@ -451,7 +454,10 @@ static const char *strings_de[] {
     " | Auswahl: ",
     " | Feststelltaste: ",
 
-    "Zeile bearbeiten ",
+    "Datei geladen: ",
+    "Zeile bearbeiten: ",
+    "Zeile aktualisiert: ",
+    "Bearbeitung abbrechen",
     "Ungespeicherte Änderungen! Drücken Sie erneut Minus zum Beenden",
     "Erfolgreich gespeichert: ",
     "FEHLER: Fehler beim Speichern der Datei!",
@@ -473,13 +479,11 @@ static const char *strings_de[] {
     "Rücktaste (vorheriges Zeichen gelöscht)",
     "Vorwärtszeichen gelöscht",
     "Neue Zeile eingefügt",
-    "Nach oben scrollen bis Zeile: ",
-    "Nach unten scrollen bis Zeile: ",
-    "| \uE0EF Speichern | \uE0F0 Beenden | \uE0E0 Bearbeiten | \uE0E1 Löschen | \uE0E6 Rückgängig | \uE0E7 Wiederherstellen |",
+    "| \uE0EF Speichern | \uE0F0 Beenden | \uE0E0 Bearbeiten | \uE0E1 Löschen | \uE0E6 Rückgängig | \uE0E7 Wiederherstellen | \uE0E4+\uE0ED/\uE0EE Auswählen | \uE0E2 Kopieren | \uE0E3 Einfügen | \uE0E5 Suchen \uE0E5+\uE0EE/\uE0ED Nächstes/Vorheriges |",
 };
 
 // Italian
-static const char *strings_it[] {
+static const char* strings_it[] = {
     "OK",
     "Annulla",
 
@@ -570,7 +574,10 @@ static const char *strings_it[] {
     " | Seleziona: ",
     " | Bloc Maiusc: ",
 
-    "Modifica riga ",
+    "File caricato: ",
+    "Modifica riga: ",
+    "Riga aggiornata: ",
+    "Annulla modifica",
     "Modifiche non salvate! Premi di nuovo il tasto Meno per uscire",
     "Salvato con successo: ",
     "ERRORE: Impossibile salvare il file!",
@@ -592,13 +599,11 @@ static const char *strings_it[] {
     "Backspace (carattere precedente cancellato)",
     "Carattere successivo cancellato",
     "Nuova riga inserita",
-    "Scorri verso l'alto fino alla riga: ",
-    "Scorri verso il basso fino alla riga: ",
-    "| \uE0EF Salva | \uE0F0 Esci | \uE0E0 Modifica | \uE0E1 Elimina | \uE0E6 Annulla | \uE0E7 Ripristina |",
+    "| \uE0EF Salvare | \uE0F0 Uscire | \uE0E0 Modificare | \uE0E1 Eliminare | \uE0E6 Annullare | \uE0E7 Ripristinare | \uE0E4+\uE0ED/\uE0EE Selezionare | \uE0E2 Copiare | \uE0E3 Incollare | \uE0E5 Cercare \uE0E5+\uE0EE/\uE0ED Successivo/Precedente |",
 };
 
 // Spanish
-static const char *strings_es[] {
+static const char* strings_es[] = {
     "OK",
     "Cancelar",
 
@@ -689,7 +694,10 @@ static const char *strings_es[] {
     " | Selección: ",
     " | Bloq Mayús: ",
 
-    "Editar línea ",
+    "Archivo cargado: ",
+    "Editar línea: ",
+    "Línea actualizada: ",
+    "Cancelar edición",
     "¡Cambios sin guardar! Presione Menos de nuevo para salir",
     "Guardado correctamente: ",
     "ERROR: ¡Error al guardar el archivo!",
@@ -711,13 +719,11 @@ static const char *strings_es[] {
     "Retroceso (carácter anterior eliminado)",
     "Carácter siguiente eliminado",
     "Nueva línea insertada",
-    "Desplazarse hacia arriba hasta la línea: ",
-    "Desplazarse hacia abajo hasta la línea: ",
-    "| \uE0EF Guardar | \uE0F0 Salir | \uE0E0 Editar | \uE0E1 Eliminar | \uE0E6 Deshacer | \uE0E7 Rehacer |",
+    "| \uE0EF Guardar | \uE0F0 Salir | \uE0E0 Editar | \uE0E1 Eliminar | \uE0E6 Deshacer | \uE0E7 Rehacer | \uE0E4+\uE0ED/\uE0EE Seleccionar | \uE0E2 Copiar | \uE0E3 Pegar | \uE0E5 Buscar \uE0E5+\uE0EE/\uE0ED Siguiente/Anterior |",
 };
 
 // Simplified Chinese
-static const char *strings_sc[] {
+static const char* strings_sc[] = {
     "确定",
     "取消",
 
@@ -800,21 +806,24 @@ static const char *strings_sc[] {
     "关闭",
 
     // Text editor strings
-    "行: ",
-    " 列: ",
-    " | 视图: ",
-    " | 已修改: ",
-    " | 模式: ",
-    " | 选择: ",
-    " | 大写锁定: ",
+    "行：",
+    " 列：",
+    " | 视图：",
+    " | 已修改：",
+    " | 模式：",
+    " | 选择：",
+    " | 大写锁定：",
 
-    "编辑行 ",
+    "文件已加载: ",
+    "编辑行：",
+    "已更新行：",
+    "取消编辑",
     "未保存的更改！再次按减号退出",
     "保存成功：",
     "错误：保存文件失败！",
     "没有要保存的更改",
-    "复制的字符: ",
-    "没有选定的文本可复制",
+    "複製的字符：",
+    "没有选定的文本可複製",
     "从剪贴板粘贴",
     "剪贴板为空",
     "撤销成功",
@@ -830,13 +839,11 @@ static const char *strings_sc[] {
     "退格键（已删除前一个字符）",
     "已删除下一个字符",
     "已插入新行",
-    "向上滚动到行：",
-    "向下滚动到行：",
-    "| \uE0EF 保存 | \uE0F0 退出 | \uE0E0 编辑 | \uE0E1 删除 | \uE0E6 撤销 | \uE0E7 重做 |",
+    "| \uE0EF 保存 | \uE0F0 退出 | \uE0E0 编辑 | \uE0E1 删除 | \uE0E6 撤销 | \uE0E7 重做 | \uE0E4+\uE0ED/\uE0EE 选择 | \uE0E2 复制 | \uE0E3 粘贴 | \uE0E5 搜索 \uE0E5+\uE0EE/\uE0ED 下一个/上一个 |",
 };
 
 // Korean
-static const char *strings_ko[] {
+static const char* strings_ko[] = {
     "확인",
     "취소",
 
@@ -900,7 +907,7 @@ static const char *strings_ko[] {
 
     "업데이트",
     "네트워크에 연결할 수 없습니다.",
-    "업데이트가 가능합니다。",
+    "업데이트가 가능합니다.",
     "NX-Shell 버전을 다운로드하고 설치하시겠습니까 ",
     "업데이트에 성공했습니다.",
     "애플리케이션을 종료하고 다시 실행해 주세요.",
@@ -927,7 +934,10 @@ static const char *strings_ko[] {
     " | 선택: ",
     " | Caps: ",
 
-    "줄 편집 ",
+    "파일 로드 완료: ",
+    "줄 편집: ",
+    "줄 업데이트: ",
+    "편집 취소",
     "저장하지 않은 변경 사항! 종료하려면 마이너스 키를 다시 누르세요",
     "성공적으로 저장됨: ",
     "오류: 파일 저장 실패!",
@@ -949,13 +959,11 @@ static const char *strings_ko[] {
     "백스페이스 (이전 문자 삭제됨)",
     "다음 문자 삭제됨",
     "새 줄 삽입됨",
-    "줄까지 위로 스크롤: ",
-    "줄까지 아래로 스크롤: ",
-    "| \uE0EF 저장 | \uE0F0 종료 | \uE0E0 편집 | \uE0E1 삭제 | \uE0E6 실행 취소 | \uE0E7 다시 실행 |",
+    "| \uE0EF 저장 | \uE0F0 종료 | \uE0E0 편집 | \uE0E1 삭제 | \uE0E6 실행 취소 | \uE0E7 다시 실행 | \uE0E4+\uE0ED/\uE0EE 선택 | \uE0E2 복사 | \uE0E3 붙여넣기 | \uE0E5 검색 \uE0E5+\uE0EE/\uE0ED 다음/이전 |",
 };
 
 // Dutch
-static const char *strings_nl[] {
+static const char* strings_nl[] = {
     "OK",
     "Annuleren",
 
@@ -1046,7 +1054,10 @@ static const char *strings_nl[] {
     " | Selectie: ",
     " | Caps: ",
 
-    "Regel bewerken ",
+    "Bestand geladen: ",
+    "Regel bewerken: ",
+    "Regel bijgewerkt: ",
+    "Bewerking annuleren",
     "Niet-opgeslagen wijzigingen! Druk opnieuw op Min om af te sluiten",
     "Succesvol opgeslagen: ",
     "FOUT: Kan bestand niet opslaan!",
@@ -1068,13 +1079,11 @@ static const char *strings_nl[] {
     "Backspace (vorig teken verwijderd)",
     "Volgend teken verwijderd",
     "Nieuwe regel ingevoegd",
-    "Omhoog scrollen naar regel: ",
-    "Omlaag scrollen naar regel: ",
-    "| \uE0EF Opslaan | \uE0F0 Afsluiten | \uE0E0 Bewerken | \uE0E1 Verwijderen | \uE0E6 Ongedaan maken | \uE0E7 Opnieuw |",
+    "| \uE0EF Opslaan | \uE0F0 Afsluiten | \uE0E0 Bewerken | \uE0E1 Verwijderen | \uE0E6 Ongedaan maken | \uE0E7 Opnieuw | \uE0E4+\uE0ED/\uE0EE Selecteren | \uE0E2 Kopiëren | \uE0E3 Plakken | \uE0E5 Zoeken \uE0E5+\uE0EE/\uE0ED Volgende/Vorige |",
 };
 
 // Portuguese
-static const char *strings_pt[] {
+static const char* strings_pt[] = {
     "OK",
     "Cancelar",
 
@@ -1165,7 +1174,10 @@ static const char *strings_pt[] {
     " | Seleção: ",
     " | Caps: ",
 
-    "Editar linha ",
+    "Arquivo carregado: ",
+    "Editar linha: ",
+    "Linha atualizada: ",
+    "Cancelar edição",
     "Alterações não salvas! Pressione Menos novamente para sair",
     "Salvo com sucesso: ",
     "ERRO: Falha ao salvar o arquivo!",
@@ -1187,13 +1199,11 @@ static const char *strings_pt[] {
     "Backspace (caractere anterior excluído)",
     "Próximo caractere excluído",
     "Nova linha inserida",
-    "Rolar para cima até a linha: ",
-    "Rolar para baixo até a linha: ",
-    "| \uE0EF Salvar | \uE0F0 Sair | \uE0E0 Editar | \uE0E1 Excluir | \uE0E6 Desfazer | \uE0E7 Refazer |",
+    "| \uE0EF Salvar | \uE0F0 Sair | \uE0E0 Editar | \uE0E1 Excluir | \uE0E6 Desfazer | \uE0E7 Refazer | \uE0E4+\uE0ED/\uE0EE Selecionar | \uE0E2 Copiar | \uE0E3 Colar | \uE0E5 Pesquisar \uE0E5+\uE0EE/\uE0ED Próximo/Anterior |",
 };
 
 // Russian
-static const char *strings_ru[] {
+static const char* strings_ru[] = {
     "OK",
     "Отмена",
 
@@ -1284,7 +1294,10 @@ static const char *strings_ru[] {
     " | Выделение: ",
     " | Caps Lock: ",
 
-    "Редактировать строку ",
+    "Файл загружен: ",
+    "Редактировать строку: ",
+    "Строка обновлена: ",
+    "Отменить редактирование",
     "Несохранённые изменения! Нажмите Минус ещё раз для выхода",
     "Успешно сохранено: ",
     "ОШИБКА: Не удалось сохранить файл!",
@@ -1306,13 +1319,11 @@ static const char *strings_ru[] {
     "Backspace (удалён предыдущий символ)",
     "Удалён следующий символ",
     "Вставлена новая строка",
-    "Прокрутить вверх до строки: ",
-    "Прокрутить вниз до строки: ",
-    "| \uE0EF Сохранить | \uE0F0 Выход | \uE0E0 Редактировать | \uE0E1 Удалить | \uE0E6 Отменить | \uE0E7 Повторить |",
+    "| \uE0EF Сохранить | \uE0F0 Выйти | \uE0E0 Редактировать | \uE0E1 Удалить | \uE0E6 Отменить | \uE0E7 Повторить | \uE0E4+\uE0ED/\uE0EE Выделить | \uE0E2 Копировать | \uE0E3 Вставить | \uE0E5 Найти \uE0E5+\uE0EE/\uE0ED Далее/Назад |",
 };
 
 // Traditional Chinese
-static const char *strings_tc[] {
+static const char* strings_tc[] = {
     "確定",
     "取消",
 
@@ -1395,20 +1406,23 @@ static const char *strings_tc[] {
     "關閉",
 
     // Text editor strings
-    "行: ",
-    " 列: ",
-    " | 檢視: ",
-    " | 已修改: ",
-    " | 模式: ",
-    " | 選擇: ",
-    " | 大寫鎖定: ",
+    "行：",
+    " 列：",
+    " | 檢視：",
+    " | 已修改：",
+    " | 模式：",
+    " | 選擇：",
+    " | 大寫鎖定：",
 
-    "編輯行 ",
+    "檔案已載入: ",
+    "編輯行：",
+    "已更新行：",
+    "取消編輯",
     "未儲存的更改！再次按減號退出",
     "儲存成功：",
     "錯誤：儲存檔案失敗！",
     "沒有要儲存的更改",
-    "複製的字元: ",
+    "複製的字元：",
     "沒有選定的文字可複製",
     "從剪貼簿貼上",
     "剪貼簿為空",
@@ -1425,9 +1439,7 @@ static const char *strings_tc[] {
     "退格鍵（已刪除前一個字元）",
     "已刪除下一個字元",
     "已插入新行",
-    "向上滾動到行：",
-    "向下滾動到行：",
-    "| \uE0EF 儲存 | \uE0F0 退出 | \uE0E0 編輯 | \uE0E1 刪除 | \uE0E6 復原 | \uE0E7 重做 |",
+    "| \uE0EF 儲存 | \uE0F0 退出 | \uE0E0 編輯 | \uE0E1 刪除 | \uE0E6 復原 | \uE0E7 重做 | \uE0E4+\uE0ED/\uE0EE 選擇 | \uE0E2 複製 | \uE0E3 貼上 | \uE0E5 搜尋 \uE0E5+\uE0EE/\uE0ED 下一個/上一個 |",
 };
 
 const char **strings[Lang::Max] = {

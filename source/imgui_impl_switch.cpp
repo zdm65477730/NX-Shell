@@ -82,7 +82,7 @@ struct ImGui_ImplSwitch_VtxAttribState {
 
     void SetState(GLint index) {
         glVertexAttribPointer(index, Size, Type, static_cast<GLboolean>(Normalized), Stride, Ptr);
-        
+    
         if (Enabled)
             glEnableVertexAttribArray(index);
         else
@@ -180,20 +180,24 @@ void ImGui_ImplSwitch_Shutdown(void) {
     IM_DELETE(bd);
 }
 
-static u64 ImGui_ImplSwitch_UpdateGamepads(void) {
+ PadState* ImGui_ImplSwitch_GetBackendPadState(void) {
+    return ImGui::GetCurrentContext() ? (PadState*)&((ImGui_ImplSwitch_Data*)ImGui::GetIO().BackendRendererUserData)->pad : nullptr;
+}
+
+u64 ImGui_ImplSwitch_UpdateGamepads(void) {
     ImGui_ImplSwitch_Data *bd = ImGui_ImplSwitch_GetBackendData();
     ImGuiIO &io = ImGui::GetIO();
     if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
         return -1;
-        
+
     // Get gamepad
     io.BackendFlags &= ~ImGuiBackendFlags_HasGamepad;
-    
+
     padUpdate(&bd->pad);
     HidAnalogStickState r_stick = padGetStickPos(&bd->pad, 1);
 
     io.BackendFlags |= ImGuiBackendFlags_HasGamepad;
-    
+
     // Update gamepad inputs
     #define IM_SATURATE(V)                      (V < 0.0f ? 0.0f : V > 1.0f ? 1.0f : V)
     #define MAP_BUTTON(KEY_NO, BUTTON_NO)       { io.AddKeyEvent(KEY_NO, (padGetButtons(&bd->pad) & BUTTON_NO)); }
@@ -275,7 +279,7 @@ static void ImGui_ImplSwitch_SetupRenderState(ImDrawData * draw_data, int fb_wid
     // Support for GL 4.5 rarely used glClipControl(GL_UPPER_LEFT)
 #if defined(GL_CLIP_ORIGIN)
     bool clip_origin_lower_left = true;
-    
+
     if (bd->HasClipOrigin) {
         GLenum current_clip_origin = 0;
         glGetIntegerv(GL_CLIP_ORIGIN, static_cast<GLint *>(&current_clip_origin));
@@ -342,10 +346,10 @@ void ImGui_ImplSwitch_RenderDrawData(ImDrawData *draw_data) {
     GLenum last_active_texture;
     glGetIntegerv(GL_ACTIVE_TEXTURE, reinterpret_cast<GLint *>(&last_active_texture));
     glActiveTexture(GL_TEXTURE0);
-    
+
     GLuint last_program;
     glGetIntegerv(GL_CURRENT_PROGRAM, reinterpret_cast<GLint *>(&last_program));
-    
+
     GLuint last_texture;
     glGetIntegerv(GL_TEXTURE_BINDING_2D, reinterpret_cast<GLint *>(&last_texture));
 #ifdef IMGUI_IMPL_OPENGL_MAY_HAVE_BIND_SAMPLER
@@ -509,27 +513,27 @@ void ImGui_ImplSwitch_RenderDrawData(ImDrawData *draw_data) {
 #endif
     glBlendEquationSeparate(last_blend_equation_rgb, last_blend_equation_alpha);
     glBlendFuncSeparate(last_blend_src_rgb, last_blend_dst_rgb, last_blend_src_alpha, last_blend_dst_alpha);
-    
+
     if (last_enable_blend)
         glEnable(GL_BLEND);
     else
         glDisable(GL_BLEND);
-    
+
     if (last_enable_cull_face)
         glEnable(GL_CULL_FACE);
     else
         glDisable(GL_CULL_FACE);
-    
+
     if (last_enable_depth_test)
         glEnable(GL_DEPTH_TEST);
     else
         glDisable(GL_DEPTH_TEST);
-    
+
     if (last_enable_stencil_test)
         glEnable(GL_STENCIL_TEST);
     else
         glDisable(GL_STENCIL_TEST);
-    
+
     if (last_enable_scissor_test)
         glEnable(GL_SCISSOR_TEST);
     else
@@ -598,10 +602,10 @@ static bool CheckShader(GLuint handle, const char* desc) {
     GLint status = 0, log_length = 0;
     glGetShaderiv(handle, GL_COMPILE_STATUS, &status);
     glGetShaderiv(handle, GL_INFO_LOG_LENGTH, &log_length);
-    
+
     if (static_cast<GLboolean>(status) == GL_FALSE)
         std::fprintf(stderr, "ERROR: ImGui_ImplSwitch_CreateDeviceObjects: failed to compile %s! With GLSL: %s\n", desc, bd->GlslVersionString);
-    
+
     if (log_length > 1) {
         ImVector<char> buf;
         buf.resize(static_cast<int>(log_length + 1));
@@ -618,10 +622,10 @@ static bool CheckProgram(GLuint handle, const char* desc) {
     GLint status = 0, log_length = 0;
     glGetProgramiv(handle, GL_LINK_STATUS, &status);
     glGetProgramiv(handle, GL_INFO_LOG_LENGTH, &log_length);
-    
+
     if (static_cast<GLboolean>(status) == GL_FALSE)
         std::fprintf(stderr, "ERROR: ImGui_ImplSwitch_CreateDeviceObjects: failed to link %s! With GLSL %s\n", desc, bd->GlslVersionString);
-    
+
     if (log_length > 1) {
         ImVector<char> buf;
         buf.resize(static_cast<int>(log_length + 1));
@@ -822,7 +826,7 @@ void ImGui_ImplSwitch_DestroyDeviceObjects(void) {
         glDeleteBuffers(1, &bd->VboHandle);
         bd->VboHandle = 0;
     }
-    
+
     if (bd->ElementsHandle) {
         glDeleteBuffers(1, &bd->ElementsHandle);
         bd->ElementsHandle = 0;
@@ -832,6 +836,6 @@ void ImGui_ImplSwitch_DestroyDeviceObjects(void) {
         glDeleteProgram(bd->ShaderHandle);
         bd->ShaderHandle = 0;
     }
-    
+
     ImGui_ImplSwitch_DestroyFontsTexture();
 }

@@ -66,7 +66,7 @@ namespace ImageViewer {
 // TextEditor function declarations
 namespace TextEditor {
     void Initialize(const std::string& path);
-    void HandleInput(u64& key);
+    void HandleInput();
     void Shutdown(void);
     void SetStatus(const std::string& msg, bool custom = true);
 }

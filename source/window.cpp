@@ -62,7 +62,7 @@ namespace Windows {
                 break;
             case WINDOW_STATE_TEXTEDITOR:
                 Windows::TextEditor();
-                TextEditor::HandleInput(key);
+                TextEditor::HandleInput();
                 break;
             default:
                 break;

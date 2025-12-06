@@ -12,10 +12,4 @@ namespace GUI {
 
     // Set text editor active state (true = text editor mode, false = normal mode)
     void SetTextEditorActive(bool active);
-
-    // Get current text editor active state
-    bool IsTextEditorActive(void);
-
-    // Reset text editor quit flag (for exit confirmation)
-    void ResetTextEditorQuit(void);
 }
