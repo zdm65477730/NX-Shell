@@ -233,19 +233,19 @@ u64 ImGui_ImplSwitch_NewFrame(void) {
         ImGui_ImplSwitch_CreateDeviceObjects();
 
     ImGuiIO& io = ImGui::GetIO();
-	
+
 	// Setup display size (every frame to accommodate for window resizing)
 	int w = 0, h = 0;
 	int display_w = 0, display_h = 0;
-	
+
 	GLint viewport[4];
 	glGetIntegerv(GL_VIEWPORT, viewport);
-	
+
 	w = display_w = viewport[2];
 	h = display_h = viewport[3];
-	
+
 	io.DisplaySize = ImVec2(static_cast<float>(w), static_cast<float>(h));
-	
+
 	if (w > 0 && h > 0)
 		io.DisplayFramebufferScale = ImVec2(static_cast<float>(display_w / w),static_cast<float>(display_h) / h);
 

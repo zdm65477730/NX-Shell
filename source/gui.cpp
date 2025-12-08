@@ -5,6 +5,7 @@
 #include <memory>
 #include <switch.h>
 
+#include "windows.hpp"
 #include "config.hpp"
 #include "gui.hpp"
 #include "imgui_impl_switch.hpp"
@@ -15,25 +16,21 @@ namespace GUI {
     static EGLContext s_context = EGL_NO_CONTEXT;
     static EGLSurface s_surface = EGL_NO_SURFACE;
 
-    // Text editor mode control (core for key conflict fix)
-    static bool s_is_text_editor_active = false;
-
     static bool InitEGL(NWindow* win) {
         s_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-        
+
         if (!s_display) {
             Log::Error("Could not connect to display! error: %d", eglGetError());
             return false;
         }
-        
+
         eglInitialize(s_display, nullptr, nullptr);
-        
         if (eglBindAPI(EGL_OPENGL_API) == EGL_FALSE) {
             Log::Error("Could not set API! error: %d", eglGetError());
             eglTerminate(s_display);
             s_display = nullptr;
         }
-        
+
         EGLConfig config;
         EGLint num_configs;
         static const EGLint framebuffer_attr_list[] = {
@@ -46,35 +43,35 @@ namespace GUI {
             EGL_STENCIL_SIZE, 8,
             EGL_NONE
         };
-        
+
         eglChooseConfig(s_display, framebuffer_attr_list, std::addressof(config), 1, std::addressof(num_configs));
         if (num_configs == 0) {
             Log::Error("No config found! error: %d", eglGetError());
             eglTerminate(s_display);
             s_display = nullptr;
         }
-        
+
         s_surface = eglCreateWindowSurface(s_display, config, win, nullptr);
         if (!s_surface) {
             Log::Error("Surface creation failed! error: %d", eglGetError());
             eglTerminate(s_display);
             s_display = nullptr;
         }
-        
+
         static const EGLint context_attr_list[] = {
             EGL_CONTEXT_OPENGL_PROFILE_MASK_KHR, EGL_CONTEXT_OPENGL_CORE_PROFILE_BIT_KHR,
             EGL_CONTEXT_MAJOR_VERSION_KHR, 4,
             EGL_CONTEXT_MINOR_VERSION_KHR, 3,
             EGL_NONE
         };
-        
+
         s_context = eglCreateContext(s_display, config, EGL_NO_CONTEXT, context_attr_list);
         if (!s_context) {
             Log::Error("Context creation failed! error: %d", eglGetError());
             eglDestroySurface(s_display, s_surface);
             s_surface = nullptr;
         }
-        
+
         eglMakeCurrent(s_display, s_surface, s_surface, s_context);
         return true;
     }
@@ -82,17 +79,17 @@ namespace GUI {
     static void ExitEGL(void) {
         if (s_display) {
             eglMakeCurrent(s_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
-            
+
             if (s_context) {
                 eglDestroyContext(s_display, s_context);
                 s_context = nullptr;
             }
-            
+
             if (s_surface) {
                 eglDestroySurface(s_display, s_surface);
                 s_surface = nullptr;
             }
-            
+
             eglTerminate(s_display);
             s_display = nullptr;
         }
@@ -105,7 +102,7 @@ namespace GUI {
     void SetDefaultTheme(void) {
         ImGui::GetStyle().FrameRounding = 4.0f;
         ImGui::GetStyle().GrabRounding = 4.0f;
-        
+
         ImVec4 *colors = ImGui::GetStyle().Colors;
         colors[ImGuiCol_Text] = ImVec4(0.95f, 0.96f, 0.98f, 1.00f);
         colors[ImGuiCol_TextDisabled] = ImVec4(0.36f, 0.42f, 0.47f, 1.00f);
@@ -162,12 +159,12 @@ namespace GUI {
         ImGui::CreateContext();
         ImGuiIO &io = ImGui::GetIO();
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-        
+
         if (!GUI::InitEGL(nwindowGetDefault()))
             return false;
-        
+
         gladLoadGL();
-        
+
         ImGui_ImplSwitch_Init("#version 130");
 
         // Load nintendo font
@@ -179,14 +176,12 @@ namespace GUI {
             R_SUCCEEDED(plGetSharedFontByType(std::addressof(schinese), PlSharedFontType_ChineseSimplified)) &&
             R_SUCCEEDED(plGetSharedFontByType(std::addressof(tchinese), PlSharedFontType_ChineseTraditional)) &&
             R_SUCCEEDED(plGetSharedFontByType(std::addressof(korean), PlSharedFontType_KO))) {
-                
             u8 *px = nullptr;
             int w = 0, h = 0, bpp = 0;
             ImFontConfig font_cfg;
 
             font_cfg.FontDataOwnedByAtlas = false;
             io.Fonts->AddFontFromMemoryTTF(standard.address, standard.size, 20.f, std::addressof(font_cfg), io.Fonts->GetGlyphRangesDefault());
-
             if (cfg.multi_lang) {
                 font_cfg.MergeMode = true;
                 io.Fonts->AddFontFromMemoryTTF(extended.address, extended.size, 20.f, std::addressof(font_cfg), extended_range);
@@ -208,11 +203,6 @@ namespace GUI {
         GUI::SetDefaultTheme();
         return true;
     }
-    
-    // Helper: Activate/deactivate text editor mode
-    void SetTextEditorActive(bool active) {
-        s_is_text_editor_active = active;
-    }
 
     bool Loop(u64 &key) {
         if (!appletMainLoop())
@@ -221,16 +211,10 @@ namespace GUI {
         key = ImGui_ImplSwitch_NewFrame();
         ImGui::NewFrame();
 
-        // Dynamic exit logic:
-        // - Text editor mode: Exit only when editor requests it (ignore global Plus key)
-        // - Default mode: Original behavior (exit on Plus key)
-        if (s_is_text_editor_active) {
-            return true;
-        } else {
-            return !(key & HidNpadButton_Plus);
-        }
+        bool isEditorActive = TextEditor::IsActive();
+        return isEditorActive || !(key & HidNpadButton_Plus);
     }
-    
+
     void Render(void) {
         ImGui::Render();
         ImGuiIO &io = ImGui::GetIO(); (void)io;
@@ -240,8 +224,9 @@ namespace GUI {
         ImGui_ImplSwitch_RenderDrawData(ImGui::GetDrawData());
         GUI::SwapBuffers();
     }
-    
+
     void Exit(void) {
+        TextEditor::Shutdown();
         ImGui_ImplSwitch_Shutdown();
         GUI::ExitEGL();
     }

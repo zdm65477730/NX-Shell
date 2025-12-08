@@ -17,12 +17,12 @@ namespace Windows {
         ImGui::SetNextWindowSize(ImVec2(1280.0f, 720.0f), ImGuiCond_Once);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     };
-    
+
     void ExitWindow(void) {
         ImGui::End();
         ImGui::PopStyleVar();
     };
-    
+
     void ResetCheckbox(WindowData &data) {
         data.checkbox_data.checked.clear();
         data.checkbox_data.checked_copy.clear();
@@ -62,7 +62,7 @@ namespace Windows {
                 break;
             case WINDOW_STATE_TEXTEDITOR:
                 Windows::TextEditor();
-                TextEditor::HandleInput();
+                TextEditor::HandleInput(key);
                 break;
             default:
                 break;
@@ -71,10 +71,10 @@ namespace Windows {
         if ((key & HidNpadButton_X) && (data.state == WINDOW_STATE_FILEBROWSER))
             data.state = WINDOW_STATE_OPTIONS;
 
-        if (key & HidNpadButton_Y) {
+        if ((key & HidNpadButton_Y) && (data.state == WINDOW_STATE_FILEBROWSER)) {
             if ((data.checkbox_data.cwd.length() != 0) && (data.checkbox_data.cwd != cwd))
                 Windows::ResetCheckbox(data);
-            
+
             if ((std::strncmp(data.entries[data.selected].name, "..", 2)) != 0) {
                 data.checkbox_data.cwd = cwd;
                 data.checkbox_data.device = device;
@@ -92,7 +92,6 @@ namespace Windows {
                     data.state = WINDOW_STATE_OPTIONS;
                     file_stat = false;
                     break;
-
                 case WINDOW_STATE_DELETE:
                     data.state = WINDOW_STATE_OPTIONS;
                     break;

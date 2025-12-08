@@ -63,14 +63,7 @@ namespace ImageViewer {
     void HandleControls(u64 &key, bool &properties);
 }
 
-// TextEditor function declarations
-namespace TextEditor {
-    void Initialize(const std::string& path);
-    void HandleInput();
-    void Shutdown(void);
-    void SetStatus(const std::string& msg, bool custom = true);
-}
-
+// Windows
 namespace Windows {
     void SetupWindow(void);
     void ExitWindow(void);
@@ -78,4 +71,12 @@ namespace Windows {
     void MainWindow(WindowData &data, u64 &key, bool progress);
     void ImageViewer(bool &properties, bool &file_stat);
     void TextEditor();
+}
+
+namespace TextEditor {
+    void Initialize(const std::string& path);
+    void Shutdown();
+    void HandleInput(u64& key);
+    void SetStatus(const std::string& msg, bool custom = true);
+    bool IsActive();
 }
