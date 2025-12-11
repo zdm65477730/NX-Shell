@@ -1,137 +1,150 @@
 #pragma once
 
-namespace Lang {
-    typedef enum {
-        // Prompt/Message buttons
-        ButtonOK = 0,
-        ButtonCancel,
+#include <unordered_map>
 
-        // File Browser
-        FileBrowser,
-        DirectoryList,
-        FileName,
-        FileSize,
+enum class Locale {
+    Japanese,
+    English,
+    French,
+    German,
+    Italian,
+    Spanish,
+    SimplifiedChinese,
+    Korean,
+    Dutch,
+    Portuguese,
+    Russian,
+    TraditionalChinese
+};
 
-        // Options dialog
-        OptionsTitle,
-        OptionsSelectAll,
-        OptionsClearAll,
-        OptionsProperties,
-        OptionsRename,
-        OptionsNewFolder,
-        OptionsNewFile,
-        OptionsCopy,
-        OptionsMove,
-        OptionsPaste,
-        OptionsDelete,
-        OptionsSetArchiveBit,
-        OptionsRenamePrompt,
-        OptionsFolderPrompt,
-        OptionsFilePrompt,
-        OptionsCopying,
+enum class Lang {
+    // Prompt/Message buttons
+    ButtonOK = 0,
+    ButtonCancel,
 
-        // Properties dialog
-        PropertiesName,
-        PropertiesSize,
-        PropertiesCreated,
-        PropertiesModified,
-        PropertiesAccessed,
-        PropertiesWidth,
-        PropertiesHeight,
+    // File Browser
+    FileBrowser,
+    DirectoryList,
+    FileName,
+    FileSize,
 
-        // Delete dialog
-        DeleteMessage,
-        DeleteMultiplePrompt,
-        DeletePrompt,
+    // Options dialog
+    OptionsTitle,
+    OptionsSelectAll,
+    OptionsClearAll,
+    OptionsProperties,
+    OptionsRename,
+    OptionsNewFolder,
+    OptionsNewFile,
+    OptionsCopy,
+    OptionsMove,
+    OptionsPaste,
+    OptionsDelete,
+    OptionsSetArchiveBit,
+    OptionsRenamePrompt,
+    OptionsFolderPrompt,
+    OptionsFilePrompt,
+    OptionsCopying,
 
-        // Archive dialog
-        ArchiveTitle,
-        ArchiveMessage,
-        ArchivePrompt,
-        ArchiveExtracting,
+    // Properties dialog
+    PropertiesName,
+    PropertiesSize,
+    PropertiesCreated,
+    PropertiesModified,
+    PropertiesAccessed,
+    PropertiesWidth,
+    PropertiesHeight,
 
-        // SettingsWindow
-        SettingsTitle,
-        SettingsSortTitle,
-        SettingsLanguageTitle,
-        SettingsUSBTitle,
-        SettingsUSBUnmount,
-        SettingsImageViewTitle,
-        SettingsDevOptsTitle,
-        SettingsMultiLangTitle,
-        SettingsFullCharsetTitle,
-        SettingsAboutTitle,
-        SettingsCheckForUpdates,
-        SettingsImageViewFilenameToggle,
-        SettingsDevOptsLogsToggle,
-        SettingsMultiLangLogsToggle,
-        SettingsFullCharsetLogsToggle,
-        SettingsAboutVersion,
-        SettingsAboutAuthor,
-        SettingsAboutBanner,
+    // Delete dialog
+    DeleteMessage,
+    DeleteMultiplePrompt,
+    DeletePrompt,
 
-        // Updates Dialog
-        UpdateTitle,
-        UpdateNetworkError,
-        UpdateAvailable,
-        UpdatePrompt,
-        UpdateSuccess,
-        UpdateRestart,
-        UpdateNotAvailable,
+    // Archive dialog
+    ArchiveTitle,
+    ArchiveMessage,
+    ArchivePrompt,
+    ArchiveExtracting,
 
-        // USB Dialog
-        USBUnmountPrompt,
-        USBUnmountSuccess,
+    // SettingsWindow
+    SettingsTitle,
+    SettingsSortTitle,
+    SettingsLanguageTitle,
+    SettingsUSBTitle,
+    SettingsUSBUnmount,
+    SettingsImageViewTitle,
+    SettingsDevOptsTitle,
+    SettingsMultiLangTitle,
+    SettingsFullCharsetTitle,
+    SettingsAboutTitle,
+    SettingsCheckForUpdates,
+    SettingsImageViewFilenameToggle,
+    SettingsDevOptsLogsToggle,
+    SettingsMultiLangLogsToggle,
+    SettingsFullCharsetLogsToggle,
+    SettingsAboutVersion,
+    SettingsAboutAuthor,
+    SettingsAboutBanner,
 
-        // Keyboard
-        KeyboardEmpty,
+    // Updates Dialog
+    UpdateTitle,
+    UpdateNetworkError,
+    UpdateAvailable,
+    UpdatePrompt,
+    UpdateSuccess,
+    UpdateRestart,
+    UpdateNotAvailable,
 
-        // Common words
-        CommonYes,
-        CommonNo,
-        CommonOverwrite,
-        CommonInsert,
-        CommonOn,
-        CommonOff,
+    // USB Dialog
+    USBUnmountPrompt,
+    USBUnmountSuccess,
 
-        // Text Editor
-        TextEditorStatusLine,
-        TextEditorStatusCol,
-        TextEditorStatusView,
-        TextEditorStatusModified,
-        TextEditorStatusMode,
-        TextEditorStatusSelect,
-        TextEditorStatusCaps,
-        TextEditorStatusFileOpened,
-        TextEditorEditLine,
-        TextEditorUpdatedLine,
-        TextEditorCancelEdit,
-        TextEditorStatusChangesUnsaved,
-        TextEditorStatusSaved,
-        TextEditorStatusSaveFailed,
-        TextEditorStatusNoChangesToSave,
-        TextEditorStatusCopiedCharacters,
-        TextEditorStatusNoTextToCopy,
-        TextEditorStatusPasted,
-        TextEditorStatusClipboardEmpty,
-        TextEditorStatusUndoSuccessful,
-        TextEditorStatusNothingToUndo,
-        TextEditorStatusRedoSuccessful,
-        TextEditorStatusNothingToRedo,
-        TextEditorStatusFindText,
-        TextEditorStatusTextFound,
-        TextEditorStatusTextNotFound,
-        TextEditorStatusSelectModeOn,
-        TextEditorStatusSelectModeOff,
-        TextEditorStatusDeletedSelectedText,
-        TextEditorStatusDeletedPreCharacter,
-        TextEditorStatusDeleteForwardCharacter,
-        TextEditorStatusInsertNewLine,
-        TextEditorControls,
+    // Keyboard
+    KeyboardEmpty,
 
-        // Max
-        Max
-    } StringID;
-}
+    // Common words
+    CommonYes,
+    CommonNo,
+    CommonOn,
+    CommonOff,
 
-extern const char **strings[Lang::Max];
+    // Text Editor
+    TextEditorStatusLine,
+    TextEditorStatusCol,
+    TextEditorStatusView,
+    TextEditorStatusModified,
+    TextEditorStatusMode,
+    TextEditorStatusSelect,
+    TextEditorStatusEncoding,
+    TextEditorStatusEOL,
+    TextEditorStatusFileSize,
+
+    TextEditorStatusFileOpened,
+    TextEditorEditLine,
+    TextEditorUpdatedLine,
+    TextEditorCancelEdit,
+    TextEditorStatusChangesUnsaved,
+    TextEditorStatusSaved,
+    TextEditorStatusSaveFailed,
+    TextEditorStatusNoChangesToSave,
+    TextEditorStatusCopiedCharacters,
+    TextEditorStatusNoTextToCopy,
+    TextEditorStatusPasted,
+    TextEditorStatusClipboardEmpty,
+    TextEditorStatusUndoSuccessful,
+    TextEditorStatusNothingToUndo,
+    TextEditorStatusRedoSuccessful,
+    TextEditorStatusNothingToRedo,
+    TextEditorStatusFindText,
+    TextEditorStatusTextFound,
+    TextEditorStatusTextNotFound,
+    TextEditorStatusSelectModeOn,
+    TextEditorStatusSelectModeOff,
+    TextEditorStatusDeletedSelectedText,
+    TextEditorStatusDeletedPreCharacter,
+    TextEditorStatusDeleteForwardCharacter,
+    TextEditorStatusInsertNewLine,
+    TextEditorControls,
+};
+
+extern std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings;

@@ -949,13 +949,10 @@ public:
                 unsigned int viewEnd = std::min(m_core->GetScrollLine() + m_core->GetVisibleLines() - 1, totalLines);
                 
                 // Build default status message
-                std::string status = strings[cfg.lang][Lang::TextEditorStatusLine] + std::to_string(line) +
-                                    strings[cfg.lang][Lang::TextEditorStatusCol] + std::to_string(col) +
+                std::string status = strings[cfg.lang][Lang::TextEditorStatusLine] + std::to_string(line) + strings[cfg.lang][Lang::TextEditorStatusCol] + std::to_string(col) +
                                     strings[cfg.lang][Lang::TextEditorStatusView] + std::to_string(m_core->GetScrollLine()) + "-" + std::to_string(viewEnd) +
                                     strings[cfg.lang][Lang::TextEditorStatusModified] + (m_core->IsModified() ? strings[cfg.lang][Lang::CommonYes] : strings[cfg.lang][Lang::CommonNo]) +
-                                    strings[cfg.lang][Lang::TextEditorStatusMode] + (m_core->IsModified() ? strings[cfg.lang][Lang::CommonOverwrite] : strings[cfg.lang][Lang::CommonInsert]) +
-                                    strings[cfg.lang][Lang::TextEditorStatusSelect] + (m_core->GetSelection().active ? strings[cfg.lang][Lang::CommonOn] : strings[cfg.lang][Lang::CommonOff]) +
-                                    strings[cfg.lang][Lang::TextEditorStatusCaps] + (false ? strings[cfg.lang][Lang::CommonOn] : strings[cfg.lang][Lang::CommonOff]);
+                                    strings[cfg.lang][Lang::TextEditorStatusSelect] + (m_core->GetSelection().active ? strings[cfg.lang][Lang::CommonOn] : strings[cfg.lang][Lang::CommonOff]);
                 
                 // Set permanent status message
                 SetStatus(status, false);

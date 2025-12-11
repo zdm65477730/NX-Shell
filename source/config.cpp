@@ -1,5 +1,10 @@
 #include <cstdio>
 #include <cstring>
+#include <iostream>
+#include <string>
+#include <vector>
+#include <stdexcept>
+#include <cctype>
 #include <jansson.h>
 
 #include "config.hpp"
@@ -15,30 +20,70 @@ namespace Config {
     static const char *config_file = "{\n\t\"config_version\": %d,\n\t\"language\": %d,\n\t\"dev_options\": %d,\n\t\"image_filename\": %d,\n\t\"multi_lang\": %d,\n\t\"full_charset\": %d\n}";
     static int config_version_holder = 0;
     static const int buf_size = 128;
-    
+    static const std::pair<Locale, const char*> LocaleMap[] = {
+        {Locale::Japanese, "Japanese"},
+        {Locale::English, "English"},
+        {Locale::French, "French"},
+        {Locale::German, "German"},
+        {Locale::Italian, "Italian"},
+        {Locale::Spanish, "Spanish"},
+        {Locale::SimplifiedChinese, "SimplifiedChinese"},
+        {Locale::Korean, "Korean"},
+        {Locale::Dutch, "Dutch"},
+        {Locale::Portuguese, "Portuguese"},
+        {Locale::Russian, "Russian"},
+        {Locale::TraditionalChinese, "TraditionalChinese"}
+    };
+    static const size_t LocaleCount = sizeof(LocaleMap)/sizeof(LocaleMap[0]);
+
+    std::string locale2str(Locale loc) {
+        for (size_t i=0; i<LocaleCount; i++) {
+            if (LocaleMap[i].first == loc)
+                return LocaleMap[i].second;
+        }
+        return "English";
+    }
+
+    Locale str2locale(const std::string& str, bool ignore_case = true) {
+        std::string s = str;
+        if (ignore_case) {
+            for (char& c : s)
+                c = tolower(static_cast<unsigned char>(c));
+        }
+        for (size_t i=0; i<LocaleCount; i++) {
+            std::string key = LocaleMap[i].second;
+            if (ignore_case)
+                for (char& c : key)
+                    c = tolower(static_cast<unsigned char>(c));
+            if (s == key)
+                return LocaleMap[i].first;
+        }
+        return Locale::English;
+    }
+
     int Save(config_t &config) {
         Result ret = 0;
         char *buf = new char[buf_size];
-        u64 len = std::snprintf(buf, buf_size, config_file, CONFIG_VERSION, config.lang, config.dev_options, config.image_filename, config.multi_lang, config.full_charset);
-        
+        u64 len = std::snprintf(buf, buf_size, config_file, CONFIG_VERSION, locale2str(config.lang), config.dev_options, config.image_filename, config.multi_lang, config.full_charset);
+
         // Delete and re-create the file, we don't care about the return value here.
         fsFsDeleteFile(std::addressof(devices[FileSystemSDMC]), config_path);
         fsFsCreateFile(std::addressof(devices[FileSystemSDMC]), config_path, len, 0);
-        
+
         FsFile file;
         if (R_FAILED(ret = fsFsOpenFile(std::addressof(devices[FileSystemSDMC]), config_path, FsOpenMode_Write, std::addressof(file)))) {
             Log::Error("Config::Save fsFsOpenFile(%s) failed: 0x%x\n", config_path, ret);
             delete[] buf;
             return ret;
         }
-        
+
         if (R_FAILED(ret = fsFileWrite(std::addressof(file), 0, buf, len, FsWriteOption_Flush))) {
             Log::Error("Config::Save fsFileWrite(%s) failed: 0x%x\n", config_path, ret);
             delete[] buf;
             fsFileClose(std::addressof(file));
             return ret;
         }
-        
+
         fsFileClose(std::addressof(file));
         delete[] buf;
         return 0;
@@ -46,21 +91,21 @@ namespace Config {
     
     int Load(void) {
         Result ret = 0;
-        
+
         if (!FS::DirExists("/switch/"))
             fsFsCreateDirectory(std::addressof(devices[FileSystemSDMC]), "/switch");
         if (!FS::DirExists("/switch/NX-Shell/"))
             fsFsCreateDirectory(std::addressof(devices[FileSystemSDMC]), "/switch/NX-Shell");
-            
+
         if (!FS::FileExists(config_path)) {
             cfg = {};
             return Config::Save(cfg);
         }
-        
+
         FsFile file;
         if (R_FAILED(ret = fsFsOpenFile(std::addressof(devices[FileSystemSDMC]), config_path, FsOpenMode_Read, std::addressof(file))))
             return ret;
-        
+
         s64 size = 0;
         if (R_FAILED(ret = fsFileGetSize(std::addressof(file), std::addressof(size)))) {
             fsFileClose(std::addressof(file));
@@ -73,19 +118,19 @@ namespace Config {
             fsFileClose(std::addressof(file));
             return ret;
         }
-        
+
         fsFileClose(std::addressof(file));
-        
+
         json_t *root;
         json_error_t error;
         root = json_loads(buf, 0, std::addressof(error));
         delete[] buf;
-        
+
         if (!root) {
             std::printf("error: on line %d: %s\n", error.line, error.text);
             return -1;
         }
-        
+
         json_t *config_ver = json_object_get(root, "config_version");
         config_version_holder = json_integer_value(config_ver);
 
@@ -96,9 +141,11 @@ namespace Config {
             return Config::Save(cfg);
         }
 
+        cfg.lang = Locale::English;
         json_t *language = json_object_get(root, "language");
-        cfg.lang = json_integer_value(language);
-        
+        if (language && json_is_string(language))
+            cfg.lang = str2locale(json_string_value(language));
+
         json_t *dev_options = json_object_get(root, "dev_options");
         cfg.dev_options = json_integer_value(dev_options);
 

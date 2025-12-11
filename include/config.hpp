@@ -2,9 +2,10 @@
 
 #include <string>
 #include <switch.h>
+#include <language.hpp>
 
 typedef struct {
-    int lang = 1;
+    Locale lang = Locale::English;
     bool dev_options = false;
     bool image_filename = false;
     bool multi_lang = false;
