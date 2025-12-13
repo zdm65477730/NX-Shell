@@ -1297,9 +1297,11 @@ namespace TextEditorGUI {
         float lineHeight = ImGui::GetTextLineHeight();
         core->SetLineHeight(lineHeight);
 
-        // Calculate visible lines with proper floor calculation + 1 extra lines to prevent cutoff
+        // Calculate visible lines based on actual available space in the text view
         float availableHeight = ImGui::GetContentRegionAvail().y;
-        unsigned int visibleLines = static_cast<unsigned int>(std::floor(availableHeight / lineHeight));
+        availableHeight -= Config::STATUS_BAR_HEIGHT;
+        // Calculate visible lines
+        unsigned int visibleLines = static_cast<unsigned int>(availableHeight / lineHeight);
         visibleLines = std::max(visibleLines, 1U);
         core->SetVisibleLines(visibleLines);
 
@@ -1362,10 +1364,7 @@ namespace TextEditorGUI {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 
         // Create main editor window
-        if (ImGui::Begin("TextEditor", nullptr, 
-            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | 
-            ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar)) {
-
+        if (ImGui::Begin("TextEditor", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar)) {
             // Calculate heights for each section
             const float controlHintHeight = ImGui::GetTextLineHeightWithSpacing() + 2 * ImGui::GetStyle().FramePadding.y;
             const float separatorHeight = 1.0f; // ImGui::Separator() height
@@ -1384,6 +1383,7 @@ namespace TextEditorGUI {
             ImVec2 textSize = ImVec2(Config::EDITOR_WINDOW_WIDTH, textAreaHeight);
             ImGui::BeginChild("TextScrollView", textSize, true, ImGuiWindowFlags_HorizontalScrollbar);
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(Config::TEXT_PADDING_X, Config::TEXT_PADDING_Y));
+
             RenderTextContent(core);
             ImGui::PopStyleVar();
             ImGui::EndChild();
