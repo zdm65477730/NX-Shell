@@ -113,10 +113,7 @@ enum class Lang {
     TextEditorStatusCol,
     TextEditorStatusView,
     TextEditorStatusModified,
-    TextEditorStatusMode,
     TextEditorStatusSelect,
-    TextEditorStatusEncoding,
-    TextEditorStatusEOL,
     TextEditorStatusFileSize,
 
     TextEditorStatusFileOpened,

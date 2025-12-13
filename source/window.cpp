@@ -68,18 +68,21 @@ namespace Windows {
                 break;
         }
 
-        if ((key & HidNpadButton_X) && (data.state == WINDOW_STATE_FILEBROWSER))
-            data.state = WINDOW_STATE_OPTIONS;
+        // Only process main interface keys if not in text editor state
+        if (data.state != WINDOW_STATE_TEXTEDITOR) {
+            if ((key & HidNpadButton_X) && (data.state == WINDOW_STATE_FILEBROWSER))
+                data.state = WINDOW_STATE_OPTIONS;
 
-        if ((key & HidNpadButton_Y) && (data.state == WINDOW_STATE_FILEBROWSER)) {
-            if ((data.checkbox_data.cwd.length() != 0) && (data.checkbox_data.cwd != cwd))
-                Windows::ResetCheckbox(data);
+            if ((key & HidNpadButton_Y) && (data.state == WINDOW_STATE_FILEBROWSER)) {
+                if ((data.checkbox_data.cwd.length() != 0) && (data.checkbox_data.cwd != cwd))
+                    Windows::ResetCheckbox(data);
 
-            if ((std::strncmp(data.entries[data.selected].name, "..", 2)) != 0) {
-                data.checkbox_data.cwd = cwd;
-                data.checkbox_data.device = device;
-                data.checkbox_data.checked.at(data.selected) = !data.checkbox_data.checked.at(data.selected);
-                data.checkbox_data.count = std::count(data.checkbox_data.checked.begin(), data.checkbox_data.checked.end(), true);
+                if ((std::strncmp(data.entries[data.selected].name, "..", 2)) != 0) {
+                    data.checkbox_data.cwd = cwd;
+                    data.checkbox_data.device = device;
+                    data.checkbox_data.checked.at(data.selected) = !data.checkbox_data.checked.at(data.selected);
+                    data.checkbox_data.count = std::count(data.checkbox_data.checked.begin(), data.checkbox_data.checked.end(), true);
+                }
             }
         }
 
@@ -104,10 +107,6 @@ namespace Windows {
                         ImageViewer::ClearTextures();
                         data.state = WINDOW_STATE_FILEBROWSER;
                     }
-                    break;
-                case WINDOW_STATE_TEXTEDITOR:
-                    TextEditor::Shutdown();
-                    data.state = WINDOW_STATE_FILEBROWSER;
                     break;
                 default:
                     break;

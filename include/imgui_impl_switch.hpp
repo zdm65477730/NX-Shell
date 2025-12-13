@@ -22,6 +22,16 @@
 
 #include "imgui.h"      // IMGUI_IMPL_API
 
+// Add key state structure for unified input handling
+// Stores press/release/hold state of each button
+struct ImGuiSwitchKeyState {
+    bool is_down;          // True on the first frame the button is pressed
+    bool is_up;            // True on the first frame the button is released
+	bool is_pressed;       // True on the frame the button is pressed
+    bool is_held;          // True every frame the button is held
+    unsigned int hold_count; // Counter for how many frames the button has been held
+};
+
 // Backend API
 IMGUI_IMPL_API bool ImGui_ImplSwitch_Init(const char *glsl_version = nullptr);
 IMGUI_IMPL_API void ImGui_ImplSwitch_Shutdown(void);
@@ -29,6 +39,11 @@ IMGUI_IMPL_API PadState* ImGui_ImplSwitch_GetBackendPadState(void);
 IMGUI_IMPL_API u64 ImGui_ImplSwitch_UpdateGamepads(void);
 IMGUI_IMPL_API u64 ImGui_ImplSwitch_NewFrame(void);
 IMGUI_IMPL_API void ImGui_ImplSwitch_RenderDrawData(ImDrawData *draw_data);
+
+// New unified key state APIs
+IMGUI_IMPL_API const ImGuiSwitchKeyState* ImGui_ImplSwitch_GetKeyState(HidNpadButton button);
+IMGUI_IMPL_API void ImGui_ImplSwitch_ResetKeyState(HidNpadButton button);
+IMGUI_IMPL_API void ImGui_ImplSwitch_ResetKeyStates(void);
 
 // (Optional) Called by Init/NewFrame/Shutdown
 IMGUI_IMPL_API bool ImGui_ImplSwitch_CreateFontsTexture(void);

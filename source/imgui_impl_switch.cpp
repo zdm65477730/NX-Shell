@@ -1,10 +1,19 @@
 #include <cstdio>
 #include <cstring>
+#include <algorithm>
 
 // GL includes
 #include <glad/glad.h>
 
 #include "imgui_impl_switch.hpp"
+
+#define IMGUI_IMPL_SWITCH_NUM_BUTTONS 64
+#define IMGUI_IMPL_SWITCH_HOLD_THRESHOLD 15
+
+// Add global key state storage (covers all Npad buttons)
+static ImGuiSwitchKeyState g_key_states[IMGUI_IMPL_SWITCH_NUM_BUTTONS] = {0};
+static u64 g_prev_buttons = 0;
+static u64 g_curr_buttons = 0;
 
 // Vertex arrays are not supported on ES2/WebGL1 unless Emscripten which uses an extension
 #ifndef IMGUI_IMPL_OPENGL_ES2
@@ -184,45 +193,100 @@ void ImGui_ImplSwitch_Shutdown(void) {
     return ImGui::GetCurrentContext() ? (PadState*)&((ImGui_ImplSwitch_Data*)ImGui::GetIO().BackendRendererUserData)->pad : nullptr;
 }
 
+// Reset all key states (call on interface switch)
+IMGUI_IMPL_API void ImGui_ImplSwitch_ResetKeyStates(void) {
+    memset(g_key_states, 0, sizeof(g_key_states));
+    g_prev_buttons = 0;
+    g_curr_buttons = 0;
+}
+
+// Set key state for a specific button
+IMGUI_IMPL_API void ImGui_ImplSwitch_ResetKeyState(HidNpadButton key) {
+    u64 button = static_cast<u64>(key);
+    unsigned int idx = static_cast<unsigned int>(__builtin_ctzll(button));
+    if (idx >= IMGUI_IMPL_SWITCH_NUM_BUTTONS) {
+        return;
+    }
+    g_curr_buttons &= ~button;
+    g_prev_buttons &= ~button;
+    g_key_states[idx] = {false, false, false, 0};
+}
+
+// Get key state for a specific button
+IMGUI_IMPL_API const ImGuiSwitchKeyState* ImGui_ImplSwitch_GetKeyState(HidNpadButton key) {
+    unsigned int idx = static_cast<unsigned int>(__builtin_ctzll(static_cast<u64>(key)));
+    if (idx >= IMGUI_IMPL_SWITCH_NUM_BUTTONS) {
+        return nullptr;
+    }
+    return &g_key_states[idx];
+}
+
 u64 ImGui_ImplSwitch_UpdateGamepads(void) {
     ImGui_ImplSwitch_Data *bd = ImGui_ImplSwitch_GetBackendData();
     ImGuiIO &io = ImGui::GetIO();
     if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0)
-        return -1;
+        return 0;
 
-    // Get gamepad
-    io.BackendFlags &= ~ImGuiBackendFlags_HasGamepad;
-
+    // Update pad state
     padUpdate(&bd->pad);
+    g_prev_buttons = g_curr_buttons;
+    g_curr_buttons = padGetButtons(&bd->pad);
     HidAnalogStickState r_stick = padGetStickPos(&bd->pad, 1);
 
+    // Update unified key states for all buttons
+    for (int i = 0; i < IMGUI_IMPL_SWITCH_NUM_BUTTONS; i++) {
+        HidNpadButton button = static_cast<HidNpadButton>(1ULL << i);
+        bool curr_pressed = (g_curr_buttons & button) != 0;
+        bool prev_pressed = (g_prev_buttons & button) != 0;
+
+        // Update hold counter
+        if (curr_pressed) {
+            g_key_states[i].hold_count++;
+        } else {
+            g_key_states[i].hold_count = 0;
+        }
+
+        // Update key state flags
+        g_key_states[i].is_down = curr_pressed && !prev_pressed;
+        g_key_states[i].is_up = !curr_pressed && prev_pressed;
+        g_key_states[i].is_pressed = curr_pressed;
+        g_key_states[i].is_held = curr_pressed && (g_key_states[i].hold_count >= IMGUI_IMPL_SWITCH_HOLD_THRESHOLD);
+    }
+
+    // Original gamepad mapping for ImGui navigation
+    io.BackendFlags &= ~ImGuiBackendFlags_HasGamepad;
     io.BackendFlags |= ImGuiBackendFlags_HasGamepad;
 
-    // Update gamepad inputs
-    #define IM_SATURATE(V)                      (V < 0.0f ? 0.0f : V > 1.0f ? 1.0f : V)
-    #define MAP_BUTTON(KEY_NO, BUTTON_NO)       { io.AddKeyEvent(KEY_NO, (padGetButtons(&bd->pad) & BUTTON_NO)); }
-    #define MAP_ANALOG(KEY_NO, AXIS_NO, V0, V1) { float vn = (float)(AXIS_NO - V0) / (float)(V1 - V0); vn = IM_SATURATE(vn); io.AddKeyAnalogEvent(KEY_NO, vn > 0.1f, vn); }
-    const int thumb_dead_zone = 8000;           // SDL_gamecontroller.h suggests using this value.
-    MAP_BUTTON(ImGuiKey_GamepadStart,           HidNpadButton_Plus);
-    MAP_BUTTON(ImGuiKey_GamepadBack,            HidNpadButton_Minus);
-    MAP_BUTTON(ImGuiKey_GamepadFaceDown,        HidNpadButton_A);
-    MAP_BUTTON(ImGuiKey_GamepadFaceRight,       HidNpadButton_B);
-    MAP_BUTTON(ImGuiKey_GamepadFaceLeft,        HidNpadButton_X);
-    //MAP_BUTTON(ImGuiKey_GamepadFaceUp,          HidNpadButton_Y);
-    MAP_BUTTON(ImGuiKey_GamepadDpadLeft,        HidNpadButton_Left);
-    MAP_BUTTON(ImGuiKey_GamepadDpadRight,       HidNpadButton_Right)
-    MAP_BUTTON(ImGuiKey_GamepadDpadUp,          HidNpadButton_Up);
-    MAP_BUTTON(ImGuiKey_GamepadDpadDown,        HidNpadButton_Down);
-    MAP_BUTTON(ImGuiKey_GamepadL1,              HidNpadButton_L);
-    MAP_BUTTON(ImGuiKey_GamepadR1,              HidNpadButton_R);
-    MAP_ANALOG(ImGuiKey_GamepadLStickLeft,      r_stick.x, -thumb_dead_zone, -32768);
-    MAP_ANALOG(ImGuiKey_GamepadLStickRight,     r_stick.x, +thumb_dead_zone, +32767);
-    MAP_ANALOG(ImGuiKey_GamepadLStickUp,        r_stick.y, +thumb_dead_zone, +32767);
-    MAP_ANALOG(ImGuiKey_GamepadLStickDown,      r_stick.y, -thumb_dead_zone, -32767);
+    #define IM_SATURATE(V) (V < 0.0f ? 0.0f : V > 1.0f ? 1.0f : V)
+    #define MAP_BUTTON(KEY_NO, BUTTON_NO) { io.AddKeyEvent(KEY_NO, (g_curr_buttons & BUTTON_NO)); }
+    #define MAP_ANALOG(KEY_NO, AXIS_NO, V0, V1) { \
+        float vn = (float)(AXIS_NO - V0) / (float)(V1 - V0); \
+        vn = IM_SATURATE(vn); \
+        io.AddKeyAnalogEvent(KEY_NO, vn > 0.1f, vn); \
+    }
+
+    const int thumb_dead_zone = 8000;
+    MAP_BUTTON(ImGuiKey_GamepadStart, HidNpadButton_Plus);
+    MAP_BUTTON(ImGuiKey_GamepadBack, HidNpadButton_Minus);
+    MAP_BUTTON(ImGuiKey_GamepadFaceDown, HidNpadButton_A);
+    MAP_BUTTON(ImGuiKey_GamepadFaceRight, HidNpadButton_B);
+    MAP_BUTTON(ImGuiKey_GamepadFaceLeft, HidNpadButton_X);
+    // MAP_BUTTON(ImGuiKey_GamepadFaceUp, HidNpadButton_Y);
+    MAP_BUTTON(ImGuiKey_GamepadDpadLeft, HidNpadButton_Left);
+    MAP_BUTTON(ImGuiKey_GamepadDpadRight, HidNpadButton_Right);
+    MAP_BUTTON(ImGuiKey_GamepadDpadUp, HidNpadButton_Up);
+    MAP_BUTTON(ImGuiKey_GamepadDpadDown, HidNpadButton_Down);
+    MAP_BUTTON(ImGuiKey_GamepadL1, HidNpadButton_L);
+    MAP_BUTTON(ImGuiKey_GamepadR1, HidNpadButton_R);
+    MAP_ANALOG(ImGuiKey_GamepadLStickLeft, r_stick.x, -thumb_dead_zone, -32768);
+    MAP_ANALOG(ImGuiKey_GamepadLStickRight, r_stick.x, +thumb_dead_zone, +32767);
+    MAP_ANALOG(ImGuiKey_GamepadLStickUp, r_stick.y, +thumb_dead_zone, +32767);
+    MAP_ANALOG(ImGuiKey_GamepadLStickDown, r_stick.y, -thumb_dead_zone, -32768);
     #undef MAP_BUTTON
     #undef MAP_ANALOG
+    #undef IM_SATURATE
 
-    return padGetButtonsDown(&bd->pad);
+    return g_curr_buttons;
 }
 
 u64 ImGui_ImplSwitch_NewFrame(void) {

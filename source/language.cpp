@@ -77,10 +77,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusCol, " 列: "},
             {Lang::TextEditorStatusView, " | 表示: "},
             {Lang::TextEditorStatusModified, " | 更新: "},
-            {Lang::TextEditorStatusMode, " | モード: "},
             {Lang::TextEditorStatusSelect, " | 選択: "},
-            {Lang::TextEditorStatusEncoding, " | エンコーディング: "},
-            {Lang::TextEditorStatusEOL, " | 行末: "},
             {Lang::TextEditorStatusFileSize, " | ファイルサイズ: "},
             {Lang::TextEditorStatusFileOpened, "ファイル読み込み完了: "},
             {Lang::TextEditorEditLine, "行編集: "},
@@ -107,7 +104,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeletedPreCharacter, "バックスペース (前の文字を削除)"},
             {Lang::TextEditorStatusDeleteForwardCharacter, "次の文字を削除"},
             {Lang::TextEditorStatusInsertNewLine, "新しい行を挿入"},
-            {Lang::TextEditorControls, "| \uE0EF 保存 | \uE0F0 終了 | \uE0E0 編集 | \uE0E1 削除 | \uE0E6 元に戻す | \uE0E7 やり直す | \uE0E4+\uE0ED/\uE0EE 選択 | \uE0E2 コピー | \uE0E3 貼り付け | \uE0E5 検索 \uE0E5+\uE0EE/\uE0ED 次へ/前へ |"},
+            {Lang::TextEditorControls, "| \uE0EF 保存 | \uE0F0 終了 | \uE0E0 編集 | \uE0E1 削除 | \uE0E6 元に戻す | \uE0E7 やり直す | \uE0E4+\uE0ED/\uE0EE 選択 | \uE0E2 コピー | \uE0E3 貼り付け | \uE0E5 検索 |"},
         }
     },
     {
@@ -184,10 +181,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusCol,  " Col: "},
             {Lang::TextEditorStatusView,  " | View: "},
             {Lang::TextEditorStatusModified,  " | Modified: "},
-            {Lang::TextEditorStatusMode,  " | Mode: "},
             {Lang::TextEditorStatusSelect,  " | Select: "},
-            {Lang::TextEditorStatusEncoding, " | Encoding: "},
-            {Lang::TextEditorStatusEOL, " | EOL: "},
             {Lang::TextEditorStatusFileSize, " | File size: "},
             {Lang::TextEditorStatusFileOpened,  "File loaded: "},
             {Lang::TextEditorEditLine,  "Edit line: "},
@@ -214,7 +208,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeletedPreCharacter,  "Backspace (deleted previous character)"},
             {Lang::TextEditorStatusDeleteForwardCharacter,  "Deleted forward character"},
             {Lang::TextEditorStatusInsertNewLine,  "Inserted new line"},
-            {Lang::TextEditorControls, "| \uE0EF Save | \uE0F0 Exit | \uE0E0 Edit | \uE0E1 Delete | \uE0E6 Undo | \uE0E7 Redo | \uE0E4+\uE0ED/\uE0EE Select | \uE0E2 Copy | \uE0E3 Paste | \uE0E5 Search \uE0E5+\uE0EE/\uE0ED Next/Previous |"},
+            {Lang::TextEditorControls, "| \uE0EF Save | \uE0F0 Exit | \uE0E0 Edit | \uE0E1 Delete | \uE0E6 Undo | \uE0E7 Redo | \uE0E4+\uE0ED/\uE0EE Select | \uE0E2 Copy | \uE0E3 Paste | \uE0E5 Search |"},
         }
     },
     {
@@ -291,10 +285,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusCol, " Colonne: "},
             {Lang::TextEditorStatusView, " | Vue: "},
             {Lang::TextEditorStatusModified, " | Modifié: "},
-            {Lang::TextEditorStatusMode, " | Mode: "},
             {Lang::TextEditorStatusSelect, " | Sélection: "},
-            {Lang::TextEditorStatusEncoding, " | Encodage: "},
-            {Lang::TextEditorStatusEOL, " | Fin de ligne: "},
             {Lang::TextEditorStatusFileSize, " | Taille du fichier: "},
             {Lang::TextEditorStatusFileOpened, "Fichier chargé: "},
             {Lang::TextEditorEditLine, "Modifier la ligne: "},
@@ -321,7 +312,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeletedPreCharacter, "Retour arrière (caractère précédent supprimé)"},
             {Lang::TextEditorStatusDeleteForwardCharacter, "Caractère suivant supprimé"},
             {Lang::TextEditorStatusInsertNewLine, "Nouvelle ligne insérée"},
-            {Lang::TextEditorControls, "| \uE0EF Enregistrer | \uE0F0 Quitter | \uE0E0 Modifier | \uE0E1 Supprimer | \uE0E6 Annuler | \uE0E7 Rétablir | \uE0E4+\uE0ED/\uE0EE Sélectionner | \uE0E2 Copier | \uE0E3 Coller | \uE0E5 Rechercher \uE0E5+\uE0EE/\uE0ED Suivant/Précédent |"},
+            {Lang::TextEditorControls, "| \uE0EF Enregistrer | \uE0F0 Quitter | \uE0E0 Modifier | \uE0E1 Supprimer | \uE0E6 Annuler | \uE0E7 Rétablir | \uE0E4+\uE0ED/\uE0EE Sélectionner | \uE0E2 Copier | \uE0E3 Coller | \uE0E5 Rechercher |"},
         }
     },
     {
@@ -398,10 +389,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusCol, " Spalte: "},
             {Lang::TextEditorStatusView, " | Ansicht: "},
             {Lang::TextEditorStatusModified, " | Geändert: "},
-            {Lang::TextEditorStatusMode, " | Modus: "},
             {Lang::TextEditorStatusSelect, " | Auswahl: "},
-            {Lang::TextEditorStatusEncoding, " | Kodierung: "},
-            {Lang::TextEditorStatusEOL, " | Zeilenende: "},
             {Lang::TextEditorStatusFileSize, " | Dateigröße: "},
             {Lang::TextEditorStatusFileOpened, "Datei geladen: "},
             {Lang::TextEditorEditLine, "Zeile bearbeiten: "},
@@ -428,7 +416,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeletedPreCharacter, "Rücktaste (vorheriges Zeichen gelöscht)"},
             {Lang::TextEditorStatusDeleteForwardCharacter, "Vorwärtszeichen gelöscht"},
             {Lang::TextEditorStatusInsertNewLine, "Neue Zeile eingefügt"},
-            {Lang::TextEditorControls, "| \uE0EF Speichern | \uE0F0 Beenden | \uE0E0 Bearbeiten | \uE0E1 Löschen | \uE0E6 Rückgängig | \uE0E7 Wiederherstellen | \uE0E4+\uE0ED/\uE0EE Auswählen | \uE0E2 Kopieren | \uE0E3 Einfügen | \uE0E5 Suchen \uE0E5+\uE0EE/\uE0ED Nächstes/Vorheriges |"},
+            {Lang::TextEditorControls, "| \uE0EF Speichern | \uE0F0 Beenden | \uE0E0 Bearbeiten | \uE0E1 Löschen | \uE0E6 Rückgängig | \uE0E7 Wiederherstellen | \uE0E4+\uE0ED/\uE0EE Auswählen | \uE0E2 Kopieren | \uE0E3 Einfügen | \uE0E5 Suchen |"},
         }
     },
     {
@@ -505,10 +493,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusCol, " Colonna: "},
             {Lang::TextEditorStatusView, " | Vista: "},
             {Lang::TextEditorStatusModified, " | Modificato: "},
-            {Lang::TextEditorStatusMode, " | Modalità: "},
             {Lang::TextEditorStatusSelect, " | Seleziona: "},
-            {Lang::TextEditorStatusEncoding, " | Codifica: "},
-            {Lang::TextEditorStatusEOL, " | Fine riga: "},
             {Lang::TextEditorStatusFileSize, " | Dimensione file: "},
             {Lang::TextEditorStatusFileOpened, "File caricato: "},
             {Lang::TextEditorEditLine, "Modifica riga: "},
@@ -535,7 +520,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeletedPreCharacter, "Backspace (carattere precedente cancellato)"},
             {Lang::TextEditorStatusDeleteForwardCharacter, "Carattere successivo cancellato"},
             {Lang::TextEditorStatusInsertNewLine, "Nuova riga inserita"},
-            {Lang::TextEditorControls, "| \uE0EF Salvare | \uE0F0 Uscire | \uE0E0 Modificare | \uE0E1 Eliminare | \uE0E6 Annullare | \uE0E7 Ripristinare | \uE0E4+\uE0ED/\uE0EE Selezionare | \uE0E2 Copiare | \uE0E3 Incollare | \uE0E5 Cercare \uE0E5+\uE0EE/\uE0ED Successivo/Precedente |"},
+            {Lang::TextEditorControls, "| \uE0EF Salvare | \uE0F0 Uscire | \uE0E0 Modificare | \uE0E1 Eliminare | \uE0E6 Annullare | \uE0E7 Ripristinare | \uE0E4+\uE0ED/\uE0EE Selezionare | \uE0E2 Copiare | \uE0E3 Incollare | \uE0E5 Cercare |"},
         }
     },
     {
@@ -612,10 +597,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusCol, " Columna: "},
             {Lang::TextEditorStatusView, " | Vista: "},
             {Lang::TextEditorStatusModified, " | Modificado: "},
-            {Lang::TextEditorStatusMode, " | Modo: "},
             {Lang::TextEditorStatusSelect, " | Selección: "},
-            {Lang::TextEditorStatusEncoding, " | Codificación: "},
-            {Lang::TextEditorStatusEOL, " | Fin de línea: "},
             {Lang::TextEditorStatusFileSize, " | Tamaño del archivo: "},
             {Lang::TextEditorStatusFileOpened, "Archivo cargado: "},
             {Lang::TextEditorEditLine, "Editar línea: "},
@@ -642,7 +624,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeletedPreCharacter, "Retroceso (carácter anterior eliminado)"},
             {Lang::TextEditorStatusDeleteForwardCharacter, "Carácter siguiente eliminado"},
             {Lang::TextEditorStatusInsertNewLine, "Nueva línea insertada"},
-            {Lang::TextEditorControls, "| \uE0EF Guardar | \uE0F0 Salir | \uE0E0 Editar | \uE0E1 Eliminar | \uE0E6 Deshacer | \uE0E7 Rehacer | \uE0E4+\uE0ED/\uE0EE Seleccionar | \uE0E2 Copiar | \uE0E3 Pegar | \uE0E5 Buscar \uE0E5+\uE0EE/\uE0ED Siguiente/Anterior |"},
+            {Lang::TextEditorControls, "| \uE0EF Guardar | \uE0F0 Salir | \uE0E0 Editar | \uE0E1 Eliminar | \uE0E6 Deshacer | \uE0E7 Rehacer | \uE0E4+\uE0ED/\uE0EE Seleccionar | \uE0E2 Copiar | \uE0E3 Pegar | \uE0E5 Buscar |"},
         }
     },
     {
@@ -719,10 +701,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusCol, " 列："},
             {Lang::TextEditorStatusView, " | 视图："},
             {Lang::TextEditorStatusModified, " | 已修改："},
-            {Lang::TextEditorStatusMode, " | 模式："},
             {Lang::TextEditorStatusSelect, " | 选择："},
-            {Lang::TextEditorStatusEncoding, " | 编码: "},
-            {Lang::TextEditorStatusEOL, " | 行尾符: "},
             {Lang::TextEditorStatusFileSize, " | 文件大小: "},
             {Lang::TextEditorStatusFileOpened, "文件已加载: "},
             {Lang::TextEditorEditLine, "编辑行："},
@@ -749,7 +728,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeletedPreCharacter, "退格键（已删除前一个字符）"},
             {Lang::TextEditorStatusDeleteForwardCharacter, "已删除下一个字符"},
             {Lang::TextEditorStatusInsertNewLine, "已插入新行"},
-            {Lang::TextEditorControls, "| \uE0EF 保存 | \uE0F0 退出 | \uE0E0 编辑 | \uE0E1 删除 | \uE0E6 撤销 | \uE0E7 重做 | \uE0E4+\uE0ED/\uE0EE 选择 | \uE0E2 复制 | \uE0E3 粘贴 | \uE0E5 搜索 \uE0E5+\uE0EE/\uE0ED 下一个/上一个 |"},
+            {Lang::TextEditorControls, "| \uE0EF 保存 | \uE0F0 退出 | \uE0E0 编辑 | \uE0E1 删除 | \uE0E6 撤销 | \uE0E7 重做 | \uE0E4+\uE0ED/\uE0EE 选择 | \uE0E2 复制 | \uE0E3 粘贴 | \uE0E5 搜索 |"},
         }
     },
     {
@@ -826,10 +805,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusCol, " 열: "},
             {Lang::TextEditorStatusView, " | 보기: "},
             {Lang::TextEditorStatusModified, " | 수정됨: "},
-            {Lang::TextEditorStatusMode, " | 모드: "},
             {Lang::TextEditorStatusSelect, " | 선택: "},
-            {Lang::TextEditorStatusEncoding, " | 인코딩: "},
-            {Lang::TextEditorStatusEOL, " | 줄 끝 문자: "},
             {Lang::TextEditorStatusFileSize, " | 파일 크기: "},
             {Lang::TextEditorStatusFileOpened, "파일 로드 완료: "},
             {Lang::TextEditorEditLine, "줄 편집: "},
@@ -856,7 +832,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeletedPreCharacter, "백스페이스 (이전 문자 삭제됨)"},
             {Lang::TextEditorStatusDeleteForwardCharacter, "다음 문자 삭제됨"},
             {Lang::TextEditorStatusInsertNewLine, "새 줄 삽입됨"},
-            {Lang::TextEditorControls, "| \uE0EF 저장 | \uE0F0 종료 | \uE0E0 편집 | \uE0E1 삭제 | \uE0E6 실행 취소 | \uE0E7 다시 실행 | \uE0E4+\uE0ED/\uE0EE 선택 | \uE0E2 복사 | \uE0E3 붙여넣기 | \uE0E5 검색 \uE0E5+\uE0EE/\uE0ED 다음/이전 |"}
+            {Lang::TextEditorControls, "| \uE0EF 저장 | \uE0F0 종료 | \uE0E0 편집 | \uE0E1 삭제 | \uE0E6 실행 취소 | \uE0E7 다시 실행 | \uE0E4+\uE0ED/\uE0EE 선택 | \uE0E2 복사 | \uE0E3 붙여넣기 | \uE0E5 검색 |"}
         }
     },
     {
@@ -933,10 +909,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusCol, " Kolom: "},
             {Lang::TextEditorStatusView, " | Weergave: "},
             {Lang::TextEditorStatusModified, " | Gewijzigd: "},
-            {Lang::TextEditorStatusMode, " | Modus: "},
             {Lang::TextEditorStatusSelect, " | Selectie: "},
-            {Lang::TextEditorStatusEncoding, " | Codering: "},
-            {Lang::TextEditorStatusEOL, " | Regeleinde: "},
             {Lang::TextEditorStatusFileSize, " | Bestandsgrootte: "},
             {Lang::TextEditorStatusFileOpened, "Bestand geladen: "},
             {Lang::TextEditorEditLine, "Regel bewerken: "},
@@ -963,7 +936,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeletedPreCharacter, "Backspace (vorig teken verwijderd)"},
             {Lang::TextEditorStatusDeleteForwardCharacter, "Volgend teken verwijderd"},
             {Lang::TextEditorStatusInsertNewLine, "Nieuwe regel ingevoegd"},
-            {Lang::TextEditorControls, "| \uE0EF Opslaan | \uE0F0 Afsluiten | \uE0E0 Bewerken | \uE0E1 Verwijderen | \uE0E6 Ongedaan maken | \uE0E7 Opnieuw | \uE0E4+\uE0ED/\uE0EE Selecteren | \uE0E2 Kopiëren | \uE0E3 Plakken | \uE0E5 Zoeken \uE0E5+\uE0EE/\uE0ED Volgende/Vorige |"}
+            {Lang::TextEditorControls, "| \uE0EF Opslaan | \uE0F0 Afsluiten | \uE0E0 Bewerken | \uE0E1 Verwijderen | \uE0E6 Ongedaan maken | \uE0E7 Opnieuw | \uE0E4+\uE0ED/\uE0EE Selecteren | \uE0E2 Kopiëren | \uE0E3 Plakken | \uE0E5 Zoeken |"}
         }
     },
     {
@@ -1040,10 +1013,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusCol, " Coluna: "},
             {Lang::TextEditorStatusView, " | Visualização: "},
             {Lang::TextEditorStatusModified, " | Modificado: "},
-            {Lang::TextEditorStatusMode, " | Modo: "},
             {Lang::TextEditorStatusSelect, " | Seleção: "},
-            {Lang::TextEditorStatusEncoding, " | Codificação: "},
-            {Lang::TextEditorStatusEOL, " | Fim de linha: "},
             {Lang::TextEditorStatusFileSize, " | Tamanho do arquivo: "},
             {Lang::TextEditorStatusFileOpened, "Arquivo carregado: "},
             {Lang::TextEditorEditLine, "Editar linha: "},
@@ -1070,7 +1040,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeletedPreCharacter, "Backspace (caractere anterior excluído)"},
             {Lang::TextEditorStatusDeleteForwardCharacter, "Próximo caractere excluído"},
             {Lang::TextEditorStatusInsertNewLine, "Nova linha inserida"},
-            {Lang::TextEditorControls, "| \uE0EF Salvar | \uE0F0 Sair | \uE0E0 Editar | \uE0E1 Excluir | \uE0E6 Desfazer | \uE0E7 Refazer | \uE0E4+\uE0ED/\uE0EE Selecionar | \uE0E2 Copiar | \uE0E3 Colar | \uE0E5 Pesquisar \uE0E5+\uE0EE/\uE0ED Próximo/Anterior |"}
+            {Lang::TextEditorControls, "| \uE0EF Salvar | \uE0F0 Sair | \uE0E0 Editar | \uE0E1 Excluir | \uE0E6 Desfazer | \uE0E7 Refazer | \uE0E4+\uE0ED/\uE0EE Selecionar | \uE0E2 Copiar | \uE0E3 Colar | \uE0E5 Pesquisar |"}
         }
     },
     {
@@ -1147,10 +1117,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusCol, " Столбец: "},
             {Lang::TextEditorStatusView, " | Вид: "},
             {Lang::TextEditorStatusModified, " | Изменено: "},
-            {Lang::TextEditorStatusMode, " | Режим: "},
             {Lang::TextEditorStatusSelect, " | Выделение: "},
-            {Lang::TextEditorStatusEncoding, " | Кодировка: "},
-            {Lang::TextEditorStatusEOL, " | Конец строки: "},
             {Lang::TextEditorStatusFileSize, " | Размер файла: "},
             {Lang::TextEditorStatusFileOpened, "Файл загружен: "},
             {Lang::TextEditorEditLine, "Редактировать строку: "},
@@ -1177,7 +1144,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeletedPreCharacter, "Backspace (удалён предыдущий символ)"},
             {Lang::TextEditorStatusDeleteForwardCharacter, "Удалён следующий символ"},
             {Lang::TextEditorStatusInsertNewLine, "Вставлена новая строка"},
-            {Lang::TextEditorControls, "| \uE0EF Сохранить | \uE0F0 Выйти | \uE0E0 Редактировать | \uE0E1 Удалить | \uE0E6 Отменить | \uE0E7 Повторить | \uE0E4+\uE0ED/\uE0EE Выделить | \uE0E2 Копировать | \uE0E3 Вставить | \uE0E5 Найти \uE0E5+\uE0EE/\uE0ED Далее/Назад |"}
+            {Lang::TextEditorControls, "| \uE0EF Сохранить | \uE0F0 Выйти | \uE0E0 Редактировать | \uE0E1 Удалить | \uE0E6 Отменить | \uE0E7 Повторить | \uE0E4+\uE0ED/\uE0EE Выделить | \uE0E2 Копировать | \uE0E3 Вставить | \uE0E5 Найти |"}
         }
     },
     {
@@ -1254,10 +1221,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusCol, " 列："},
             {Lang::TextEditorStatusView, " | 檢視："},
             {Lang::TextEditorStatusModified, " | 已修改："},
-            {Lang::TextEditorStatusMode, " | 模式："},
             {Lang::TextEditorStatusSelect, " | 選擇："},
-            {Lang::TextEditorStatusEncoding, " | 編碼："},
-            {Lang::TextEditorStatusEOL, " | 行尾符："},
             {Lang::TextEditorStatusFileSize, " | 檔案大小："},
             {Lang::TextEditorStatusFileOpened, "檔案已載入: "},
             {Lang::TextEditorEditLine, "編輯行："},
@@ -1284,7 +1248,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeletedPreCharacter, "退格鍵（已刪除前一個字元）"},
             {Lang::TextEditorStatusDeleteForwardCharacter, "已刪除下一個字元"},
             {Lang::TextEditorStatusInsertNewLine, "已插入新行"},
-            {Lang::TextEditorControls, "| \uE0EF 儲存 | \uE0F0 退出 | \uE0E0 編輯 | \uE0E1 刪除 | \uE0E6 復原 | \uE0E7 重做 | \uE0E4+\uE0ED/\uE0EE 選擇 | \uE0E2 複製 | \uE0E3 貼上 | \uE0E5 搜尋 \uE0E5+\uE0EE/\uE0ED 下一個/上一個 |"}
+            {Lang::TextEditorControls, "| \uE0EF 儲存 | \uE0F0 退出 | \uE0E0 編輯 | \uE0E1 刪除 | \uE0E6 復原 | \uE0E7 重做 | \uE0E4+\uE0ED/\uE0EE 選擇 | \uE0E2 複製 | \uE0E3 貼上 | \uE0E5 搜尋 |"}
         }
     }
 };
