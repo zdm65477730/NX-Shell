@@ -32,7 +32,7 @@ jobs:
           VER_FILE=Makefile
           APP_NAME=$(awk '/^APP_TITLE/{print $3}' $VER_FILE)
           VERSION=v$(awk '/^VERSION_MAJOR/{print $3}' $VER_FILE).$(awk '/^VERSION_MINOR/{print $3}' $VER_FILE).$(awk '/^VERSION_MICRO/{print $3}' $VER_FILE)
-          echo "TAG=v${VERSION}" >> "${GITHUB_ENV}"
+          echo "TAG=${VERSION}" >> "${GITHUB_ENV}"
           echo "APP_NAME=${APP_NAME}" >> "${GITHUB_ENV}"
           echo "RELEASE_NAME=${APP_NAME} ${VERSION}" >> "${GITHUB_ENV}"
         shell: bash
