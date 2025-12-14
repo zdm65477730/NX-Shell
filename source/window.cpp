@@ -6,6 +6,7 @@
 #include "popups.hpp"
 #include "tabs.hpp"
 #include "windows.hpp"
+#include "imgui_impl_switch.hpp"
 
 WindowData data;
 
@@ -65,6 +66,7 @@ namespace Windows {
                 TextEditor::HandleInput(key);
                 break;
             default:
+                ImGui_ImplSwitch_ResetKeyStates();
                 break;
         }
 
@@ -111,6 +113,7 @@ namespace Windows {
                 default:
                     break;
             }
+            ImGui_ImplSwitch_ResetKeyStates();
         }
 
         key = 0;

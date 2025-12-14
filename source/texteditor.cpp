@@ -14,11 +14,10 @@
 #include <unordered_map>
 #include <functional>
 #include <unordered_set>
-#include "windows.hpp"
 
+#include "windows.hpp"
 #include "imgui.h"
 #include "imgui_impl_switch.hpp"
-#include "windows.hpp"
 #include "fs.hpp"
 #include "keyboard.hpp"
 #include "language.hpp"
@@ -233,12 +232,19 @@ public:
         void Reset() { start = end = 0; active = false; }
     };
 
+    struct LineCache {
+        std::string content;
+        unsigned int startPos;
+        unsigned int length;
+        float totalWidth;
+        std::vector<float> charWidths;
+    };
+
     // Constructor: Initialize editor with file content
     TextEditorCore(const std::string& filePath) : 
         m_filePath(filePath), m_fileSize(0), m_isModified(false),
-        m_cursorPos(0), m_scrollLine(1), m_visibleLines(20), m_lineHeight(0.0f),
-        m_findPos(0), m_findActive(false) {
-
+        m_cursorPos(0), m_scrollLine(1), m_visibleLines(1), m_lineHeight(0.0f),
+        m_findPos(0), m_findActive(false), m_cacheValid(false), m_scrollOffset(0.0f) {
         // Load file and normalize newlines (CRLF -> LF)
         LoadFile(filePath);
 
@@ -246,9 +252,6 @@ public:
 
         // Initialize undo stack with initial state
         m_undoStack.emplace(m_text, m_cursorPos, false, true);
-
-        // Force initial scroll position to 1
-        m_scrollLine = 1;
     }
 
     // Insert text at current cursor position
@@ -268,6 +271,7 @@ public:
 
         // Mark as modified and update scroll
         m_isModified = true;
+        m_cacheValid = false;
         SyncScroll();
     }
 
@@ -282,6 +286,7 @@ public:
 
         // Mark as modified and update scroll
         m_isModified = true;
+        m_cacheValid = false;
         SyncScroll();
     }
 
@@ -299,6 +304,7 @@ public:
 
         // Mark as modified and update scroll
         m_isModified = true;
+        m_cacheValid = false;
         SyncScroll();
     }
 
@@ -349,6 +355,7 @@ public:
         m_isModified = state.isModified;
 
         // Update scroll position
+        m_cacheValid = false;
         SyncScroll();
         return true;
     }
@@ -369,6 +376,7 @@ public:
         m_isModified = state.isModified;
 
         // Update scroll position
+        m_cacheValid = false;
         SyncScroll();
         return true;
     }
@@ -414,6 +422,7 @@ public:
         m_isModified = true;
 
         // Update scroll position
+        m_cacheValid = false;
         SyncScroll();
     }
 
@@ -515,7 +524,7 @@ public:
         // Calculate viewport parameters
         unsigned int viewportLines = m_visibleLines;
         unsigned int scrollThreshold = static_cast<unsigned int>(viewportLines * Config::SCROLL_THRESHOLD_RATIO);
-        scrollThreshold = std::max(scrollThreshold, 1U); // Minimum 1 line threshold
+        scrollThreshold = std::max(scrollThreshold, 1U);
 
         // Calculate max scroll position (fixed formula)
         unsigned int maxScroll = (totalLines <= viewportLines) ? 1U : (totalLines - viewportLines + 1);
@@ -525,29 +534,22 @@ public:
         unsigned int viewEnd = viewStart + viewportLines - 1;
         viewEnd = std::min(viewEnd, totalLines);
 
-        // 1. Cursor moved above viewport - scroll up to show cursor
+        // Scroll logic
         if (cursorLine < viewStart) {
             m_scrollLine = std::max(1U, cursorLine);
-        }
-        // 2. Cursor moved below viewport - scroll down to show cursor
-        else if (cursorLine > viewEnd) {
-            m_scrollLine = std::min(maxScroll, cursorLine);
-        }
-        // 3. Cursor within viewport - handle edge scrolling
-        else {
-            // Scroll up if cursor near top edge
+        } else if (cursorLine > viewEnd) {
+            m_scrollLine = std::min(maxScroll, cursorLine - viewportLines + 1);
+        } else {
             if (cursorLine <= (viewStart + scrollThreshold) && viewStart > 1) {
                 m_scrollLine = viewStart - 1;
-            }
-            // Scroll down if cursor near bottom edge
-            else if (cursorLine >= (viewEnd - scrollThreshold) && viewStart < maxScroll) {
+            } else if (cursorLine >= (viewEnd - scrollThreshold) && viewStart < maxScroll) {
                 m_scrollLine = viewStart + 1;
             }
         }
 
-        // Ensure scroll position is always valid
+        // Ensure scroll position is valid
         m_scrollLine = std::clamp(m_scrollLine, 1U, maxScroll);
-        ImGui::SetScrollY((m_scrollLine - 1) * m_lineHeight);
+        m_scrollOffset = (m_scrollLine - 1) * m_lineHeight;
     }
 
     // Find next occurrence of text
@@ -651,23 +653,29 @@ public:
     
     // Get current scroll line
     unsigned int GetScrollLine() const { return m_scrollLine; }
-    
+
+    void SetScrollLine(unsigned int line) {
+        m_scrollLine = line;
+        SyncScroll();
+    }
+
     // Get line height (for rendering)
     float GetLineHeight() const { return m_lineHeight; }
     
     // Set line height (from GUI)
-    void SetLineHeight(float height) { m_lineHeight = height; }
+    void SetLineHeight(float height) {
+        m_lineHeight = height;
+        SyncScroll();
+    }
     
     // Get number of visible lines (viewport height / line height)
     unsigned int GetVisibleLines() const { return m_visibleLines; }
     
     // Set number of visible lines
     void SetVisibleLines(unsigned int lines) { 
-        if (lines != m_visibleLines) {
-            m_visibleLines = lines;
-            // Update scroll position to adapt to new viewport size
-            SyncScroll();
-        }
+        m_visibleLines = lines;
+        // Update scroll position to adapt to new viewport size
+        SyncScroll();
     }
 
     // Get start position of specified line (public for GUI/input access)
@@ -697,6 +705,48 @@ public:
             end++;
         }
         return end;
+    }
+
+    float GetScrollOffset() const { return m_scrollOffset; }
+
+    void SetScrollOffset(float offset) { m_scrollOffset = offset; }
+
+    void UpdateLineCache() {
+        if (m_cacheValid || m_lineHeight <= 0) return;
+
+        m_lineCache.clear();
+        m_lineCache.reserve(GetTotalLines());
+
+        size_t pos = 0;
+        size_t len = m_text.length();
+        unsigned int currentLineStart = 0;
+
+        while (pos <= len) {
+            if (pos == len || m_text[pos] == '\n') {
+                LineCache line;
+                line.content = m_text.substr(currentLineStart, pos - currentLineStart);
+                line.startPos = currentLineStart;
+                line.length = static_cast<unsigned int>(pos - currentLineStart);
+                line.totalWidth = ImGui::CalcTextSize(line.content.c_str()).x;
+                line.charWidths.resize(line.length + 1, 0.0f);
+                for (unsigned int i = 0; i < line.length; ++i) {
+                    std::string charStr(1, line.content[i]);
+                    line.charWidths[i + 1] = line.charWidths[i] + ImGui::CalcTextSize(charStr.c_str()).x;
+                }
+                m_lineCache.push_back(line);
+                currentLineStart = pos + 1;
+            }
+            pos++;
+        }
+        m_cacheValid = true;
+    }
+
+    const std::vector<LineCache>& GetLineCache() const {
+        return m_lineCache;
+    }
+
+    void InvalidateLineCache() {
+        m_cacheValid = false;
     }
 
     size_t GetFileSize() const { return m_fileSize; }
@@ -787,6 +837,10 @@ private:
     // Undo/Redo stacks
     std::stack<EditState> m_undoStack;           // Undo history stack
     std::stack<EditState> m_redoStack;           // Redo history stack
+
+    std::vector<LineCache> m_lineCache;
+    bool m_cacheValid;
+    float m_scrollOffset;                        // Scroll offset (in pixels)
 };
 
 // ========== Module 3: Editor Manager (Singleton, Lifecycle/Global State Management) ==========
@@ -865,7 +919,7 @@ public:
 
         // Build default status message
         std::string status = std::format(
-            "{}{} {}{} | {}{}-{} | {}{} | {}{} | {}{}",
+            "|{}{} {}{} | {}{}-{} | {}{} | {}{} | {}{}",
             strings[cfg.lang][Lang::TextEditorStatusLine], line,
             strings[cfg.lang][Lang::TextEditorStatusCol], col,
             strings[cfg.lang][Lang::TextEditorStatusView], m_core->GetScrollLine(), viewEnd,
@@ -1041,12 +1095,12 @@ namespace TextEditorInput {
             if (core->IsContentChanged()) {
                 bool success = core->Save();
                 if (success) {
-                    manager.SetStatus(strings[cfg.lang][Lang::TextEditorStatusSaved] + manager.GetFilePath(), false);
+                    manager.SetStatus(strings[cfg.lang][Lang::TextEditorStatusSaved] + manager.GetFilePath(), true);
                 } else {
                     manager.SetStatus(strings[cfg.lang][Lang::TextEditorStatusSaveFailed], true);
                 }
             } else {
-                manager.SetStatus(strings[cfg.lang][Lang::TextEditorStatusNoChangesToSave], false);
+                manager.SetStatus(strings[cfg.lang][Lang::TextEditorStatusNoChangesToSave], true);
             }
         }
     }
@@ -1153,15 +1207,16 @@ namespace TextEditorInput {
         auto* core = manager.GetCore();
         ImGuiIO& io = ImGui::GetIO();
 
+        if (manager.IsKeyboardPopup()) {
+            key = 0;
+            return;
+        }
+
         // Update input state (uses unified key state)
         g_keyInputHandler.Update();
 
         if (manager.IsFirstLoad()) {
             manager.SetFirstLoad(false);
-            return;
-        }
-
-        if (manager.IsKeyboardPopup()) {
             return;
         }
 
@@ -1179,9 +1234,9 @@ namespace TextEditorInput {
         }
 
         if (g_keyInputHandler.ShouldDelete()) {
-            core->DeactivateSelection();
             if (core->GetSelection().IsValid()) {
                 core->DeleteSelectedText();
+                core->DeactivateSelection();
                 manager.SetStatus(strings[cfg.lang][Lang::TextEditorStatusDeletedSelectedText], true);
             } else {
                 core->DeleteBackward();
@@ -1212,8 +1267,8 @@ namespace TextEditorInput {
 
 // ========== Module 5: GUI Renderer (ImGui Only) ==========
 namespace TextEditorGUI {
-    // Fixed: Precisely render cursor position (matches actual position exactly)
-    void RenderTextLine(TextEditorCore* core, const std::string& line, unsigned int lineNum, float lineHeight) {
+    // Precisely render cursor position (matches actual position exactly)
+    void RenderTextLine(TextEditorCore* core, const std::string& line, unsigned int lineNum, float lineHeight, float lineSpacing, const TextEditorCore::LineCache& lineCache) {
         unsigned int cursorLine, cursorCol;
         core->GetCursorLineCol(cursorLine, cursorCol);
 
@@ -1229,8 +1284,8 @@ namespace TextEditorGUI {
         if (selection.active) {
             unsigned int selStart, selEnd;
             if (selection.GetNormalizedRange(selStart, selEnd)) {
-                unsigned int lineStart = core->GetLineStartPos(lineNum);
-                unsigned int lineEnd = core->GetLineEndPos(lineNum);
+                unsigned int lineStart = lineCache.startPos;
+                unsigned int lineEnd = lineStart + lineCache.length;
 
                 unsigned int drawStart = std::max(selStart, lineStart);
                 unsigned int drawEnd = std::min(selEnd, lineEnd);
@@ -1238,19 +1293,12 @@ namespace TextEditorGUI {
                 if (drawStart < drawEnd) {
                     ImVec2 linePos = ImGui::GetCursorScreenPos();
                     ImDrawList* drawList = ImGui::GetWindowDrawList();
-
-                    // Calculate selection highlight position (exclude line number area)
-                    float xStart = linePos.x + Config::TEXT_PADDING_X + ImGui::CalcTextSize(line.substr(0, drawStart - lineStart).c_str()).x;
-                    float xEnd = linePos.x + Config::TEXT_PADDING_X + ImGui::CalcTextSize(line.substr(0, drawEnd - lineStart).c_str()).x;
+                    float xStart = linePos.x + Config::TEXT_PADDING_X + lineCache.charWidths[drawStart - lineStart];
+                    float xEnd = linePos.x + Config::TEXT_PADDING_X + lineCache.charWidths[drawEnd - lineStart];
                     float yStart = linePos.y + Config::TEXT_PADDING_Y;
                     float yEnd = linePos.y + lineHeight - Config::TEXT_PADDING_Y;
 
-                    // Draw selection highlight
-                    drawList->AddRectFilled(
-                        ImVec2(xStart, yStart),
-                        ImVec2(xEnd, yEnd),
-                        ImColor(0x00, 0x66, 0xCC, 0xAA)
-                    );
+                    drawList->AddRectFilled(ImVec2(xStart, yStart), ImVec2(xEnd, yEnd), ImColor(0x00, 0x66, 0xCC, 0xAA));
                 }
             }
         }
@@ -1261,28 +1309,19 @@ namespace TextEditorGUI {
 
         // 4. Render cursor (only for current line - exact coordinate calculation)
         if (lineNum == cursorLine) {
-            // Get current line screen position (base position)
             ImVec2 currentLinePos = ImGui::GetCursorScreenPos();
-            // Calculate cursor column (corrected to start from 0)
             unsigned int renderCol = std::max(cursorCol - 1, 0U);
-            renderCol = std::min(renderCol, static_cast<unsigned int>(line.length()));
+            renderCol = std::min(renderCol, lineCache.length);
 
-            // Precisely calculate cursor X position:
-            // - Window left offset + line number area width + text padding + character width offset
-            float textOffsetX = ImGui::CalcTextSize(line.substr(0, renderCol).c_str()).x;
+            float textOffsetX = lineCache.charWidths[renderCol];
             float cursorX = ImGui::GetWindowPos().x + Config::LINE_NUMBER_OFFSET + Config::TEXT_PADDING_X + textOffsetX;
-
-            // Precisely calculate cursor Y position:
-            // - Current line top position (subtract line height since ImGui::Text moves cursor down)
-            float cursorY = currentLinePos.y - lineHeight + Config::TEXT_PADDING_Y;
+            float cursorY = currentLinePos.y - lineSpacing + Config::TEXT_PADDING_Y;
             float cursorHeight = lineHeight - 2 * Config::TEXT_PADDING_Y;
 
-            // Cursor blink animation
             static float cursorFlash = 0.0f;
             cursorFlash += ImGui::GetIO().DeltaTime * Config::CURSOR_FLASH_SPEED;
             float alpha = std::sin(cursorFlash) > 0 ? 1.0f : 0.3f;
 
-            // Draw cursor (vertical line) - ensure rendered on top
             ImDrawList* drawList = ImGui::GetWindowDrawList();
             drawList->AddRectFilled(
                 ImVec2(cursorX, cursorY),
@@ -1293,60 +1332,27 @@ namespace TextEditorGUI {
     }
 
     // Render scrollable text content area (fixed last lines display issue)
-    void RenderTextContent(TextEditorCore* core) {
-        float lineHeight = ImGui::GetTextLineHeight();
+    void RenderTextContent(TextEditorCore* core, float lineHeight, float lineSpacing) {
         core->SetLineHeight(lineHeight);
+        core->InvalidateLineCache();
+        core->UpdateLineCache();
 
-        // Calculate visible lines based on actual available space in the text view
-        float availableHeight = ImGui::GetContentRegionAvail().y;
-        availableHeight -= Config::STATUS_BAR_HEIGHT;
-        // Calculate visible lines
-        unsigned int visibleLines = static_cast<unsigned int>(availableHeight / lineHeight);
-        visibleLines = std::max(visibleLines, 1U);
-        core->SetVisibleLines(visibleLines);
-
-        unsigned int totalLines = core->GetTotalLines();
+        const auto& lineCache = core->GetLineCache();
+        unsigned int totalLines = static_cast<unsigned int>(lineCache.size());
         unsigned int startLine = core->GetScrollLine();
-        // Correct end line calculation to avoid overflow and ensure last lines are included
+        unsigned int visibleLines = core->GetVisibleLines();
+        // Ensure viewend matches exactly with visible lines (fixes off-by-one issues)
         unsigned int endLine = std::min(startLine + visibleLines - 1, totalLines);
-
-        // Reset text stream to ensure starting from correct position
-        std::string text = core->GetText();
-        size_t pos = 0;
-        size_t len = text.length();
-        unsigned int currentLine = 1;
-
-        // Position to start line (robust handling for large files)
-        while (currentLine < startLine && pos < len) {
-            if (text[pos] == '\n') {
-                currentLine++;
-            }
-            pos++;
+        
+        for (unsigned int lineNum = startLine; lineNum <= endLine; ++lineNum) {
+            if (lineNum < 1 || lineNum > totalLines) continue;
+            const auto& line = lineCache[lineNum - 1];
+            RenderTextLine(core, line.content, lineNum, lineHeight, lineSpacing, line);
+            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (lineSpacing - lineHeight));
         }
 
-        // Render visible lines (fixed: handle partial last line and empty text case properly)
-        while (currentLine <= endLine) {
-            // Extract current line content (handle end of text correctly)
-            size_t lineEnd = text.find('\n', pos);
-            if (lineEnd == std::string::npos) {
-                lineEnd = len;
-            }
-            std::string line = text.substr(pos, lineEnd - pos);
-
-            // Render current line (pass line height for precise calculation)
-            RenderTextLine(core, line, currentLine, lineHeight);
-
-            // Move to next line (prevent infinite loop at end of text)
-            if (lineEnd >= len) {
-                break;
-            }
-            pos = lineEnd + 1;
-            currentLine++;
-        }
-
-        // Handle empty text case (ensure first line is rendered)
-        if (totalLines == 1 && text.empty()) {
-            RenderTextLine(core, "", 1, lineHeight);
+        if (totalLines == 0) {
+            RenderTextLine(core, "", 1, lineHeight, lineSpacing, TextEditorCore::LineCache{});
         }
     }
 
@@ -1358,49 +1364,142 @@ namespace TextEditorGUI {
         // Get core instance
         TextEditorCore* core = manager.GetCore();
 
-        // Set editor window position and size (fixed fullscreen)
-        ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Once);
-        ImGui::SetNextWindowSize(ImVec2(Config::EDITOR_WINDOW_WIDTH, Config::EDITOR_WINDOW_HEIGHT), ImGuiCond_Once);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        // ==============================================
+        // Basic styles: Only keep necessary no-padding and no-border (simplify, reduce Push/Pop)
+        // ==============================================
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f); // Disable window border
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f)); // Parent window no padding
 
-        // Create main editor window
-        if (ImGui::Begin("TextEditor", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar)) {
-            // Calculate heights for each section
-            const float controlHintHeight = ImGui::GetTextLineHeightWithSpacing() + 2 * ImGui::GetStyle().FramePadding.y;
-            const float separatorHeight = 1.0f; // ImGui::Separator() height
-            const float statusBarHeight = Config::STATUS_BAR_HEIGHT;
+        // ==============================================
+        // Window size: Use fixed size (restore original logic, avoid deviation from viewport size)
+        // ==============================================
+        const float windowWidth = Config::EDITOR_WINDOW_WIDTH;
+        const float windowHeight = Config::EDITOR_WINDOW_HEIGHT;
+        ImGui::SetNextWindowPos(ImVec2(0.0f, 0.0f), ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight), ImGuiCond_Always);
 
-            // Top control hint area
+        // ==============================================
+        // Window flags: Simplify, keep core functions
+        // ==============================================
+        ImGuiWindowFlags windowFlags = 
+            ImGuiWindowFlags_NoMove | 
+            ImGuiWindowFlags_NoResize | 
+            ImGuiWindowFlags_NoCollapse | 
+            ImGuiWindowFlags_NoTitleBar | 
+            ImGuiWindowFlags_NoScrollbar | 
+            ImGuiWindowFlags_NoScrollWithMouse;
+
+        // ==============================================
+        // Layout constants: Simplify, fixed values (easy to maintain)
+        // ==============================================
+        const float SCREEN_PADDING = 4.0f;          // Screen top/bottom padding
+        const float SEPARATOR_HEIGHT = 2.0f;       // Separator line height
+        const float HINT_PADDING = 8.0f;            // Hint bar internal vertical padding
+        const float STATUS_BAR_HEIGHT = Config::STATUS_BAR_HEIGHT; // Status bar height (40px)
+
+        if (ImGui::Begin("TextEditor", nullptr, windowFlags)) {
+            ImDrawList* drawList = ImGui::GetWindowDrawList();
+            const ImVec2 windowPos = ImGui::GetWindowPos(); // Window absolute position (0,0)
+
+            // Get basic text metrics (restore original logic)
+            float lineHeight = ImGui::GetTextLineHeight();
+            float lineSpacing = ImGui::GetTextLineHeightWithSpacing();
+
+            // ==============================================
+            // Step 1: Calculate fixed element heights (top hint bar + two separators + bottom status bar)
+            // ==============================================
+            // 1. Top hint bar height: Text line height + top/bottom internal padding
+            const float hintBarHeight = lineSpacing + 2 * HINT_PADDING;
+            // 2. Total top area height: Padding + hint bar + top separator
+            const float topTotalHeight = SCREEN_PADDING + hintBarHeight + SEPARATOR_HEIGHT;
+            // 3. Total bottom area height: Bottom separator + status bar + padding
+            const float bottomTotalHeight = SEPARATOR_HEIGHT + STATUS_BAR_HEIGHT + SCREEN_PADDING;
+            // 4. Text area height: Window height - total top height - total bottom height (core: remaining space)
+            const float textAreaHeight = windowHeight - topTotalHeight - bottomTotalHeight;
+
+            // ==============================================
+            // Step 2: Calculate Y coordinates for each element (top to bottom, simplified, no excessive rounding)
+            // ==============================================
+            // --- Top hint bar ---
+            const float hintBarY = SCREEN_PADDING;
+            // --- Top separator ---
+            const float sep1Y = SCREEN_PADDING + hintBarHeight;
+            // --- Text area ---
+            const float textAreaY = sep1Y + SEPARATOR_HEIGHT;
+            // --- Bottom separator ---
+            const float sep2Y = textAreaY + textAreaHeight;
+            // --- Status bar ---
+            const float statusBarY = sep2Y + SEPARATOR_HEIGHT;
+            // Status bar bottom Y: Force stick to bottom (statusBarY + STATUS_BAR_HEIGHT = windowHeight - SCREEN_PADDING)
+            // Double check: Ensure status bar height matches and sticks to bottom
+            const float statusBarActualHeight = windowHeight - SCREEN_PADDING - statusBarY;
+
+            // ==============================================
+            // Step 3: Calculate visible lines for text area (restore original logic)
+            // ==============================================
+            unsigned int visibleLines = static_cast<unsigned int>((textAreaHeight - Config::STATUS_BAR_HEIGHT) / lineSpacing);
+            visibleLines = std::max(visibleLines, 1U); // At least 1 line to prevent no display
+            core->SetVisibleLines(visibleLines);
+
+            // ==============================================
+            // Step 4: Render elements (restore normal drawing order, ensure text area displays first)
+            // ==============================================
+            // --- 1. Top hint bar (text) ---
+            ImGui::SetCursorPos(ImVec2(4.0f, hintBarY + HINT_PADDING)); // Small left padding
             ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "%s", strings[cfg.lang][Lang::TextEditorControls]);
 
-            // First separator
-            ImGui::Separator();
+            // --- 2. Top separator (draw rectangle) ---
+            drawList->AddRectFilled(
+                ImVec2(windowPos.x, windowPos.y + sep1Y),
+                ImVec2(windowPos.x + windowWidth, windowPos.y + sep1Y + SEPARATOR_HEIGHT),
+                ImColor(0x44, 0x44, 0x44, 0xFF)
+            );
 
-            // Calculate text area height: total height - control hint - 2 separators - status bar
-            float textAreaHeight = Config::EDITOR_WINDOW_HEIGHT - controlHintHeight - 2 * separatorHeight - statusBarHeight;
+            // --- 3. Text area (core: restore normal Child, ensure display) ---
+            if (textAreaHeight > 0) { // Only draw if height > 0
+                ImGui::SetCursorPosY(textAreaY);
+                ImGui::BeginChild(
+                    "TextScrollView", 
+                    ImVec2(windowWidth, textAreaHeight), 
+                    true, // Scrollable
+                    ImGuiWindowFlags_HorizontalScrollbar // Horizontal scrollbar
+                );
+                ImGui::SetScrollY(core->GetScrollOffset());
+                // Text internal padding (restore original logic, ensure text displays normally)
+                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(Config::TEXT_PADDING_X, Config::TEXT_PADDING_Y));
+                RenderTextContent(core, lineHeight, lineSpacing);
+                ImGui::PopStyleVar();
+                ImGui::EndChild();
+            }
 
-            // Text editing area with fixed size
-            ImVec2 textSize = ImVec2(Config::EDITOR_WINDOW_WIDTH, textAreaHeight);
-            ImGui::BeginChild("TextScrollView", textSize, true, ImGuiWindowFlags_HorizontalScrollbar);
-            ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(Config::TEXT_PADDING_X, Config::TEXT_PADDING_Y));
+            // --- 4. Bottom separator ---
+            drawList->AddRectFilled(
+                ImVec2(windowPos.x, windowPos.y + sep2Y),
+                ImVec2(windowPos.x + windowWidth, windowPos.y + sep2Y + SEPARATOR_HEIGHT),
+                ImColor(0x44, 0x44, 0x44, 0xFF)
+            );
 
-            RenderTextContent(core);
-            ImGui::PopStyleVar();
-            ImGui::EndChild();
-
-            // Second separator
-            ImGui::Separator();
-
-            // Status bar with fixed height
-            ImVec2 statusBarSize = ImVec2(Config::EDITOR_WINDOW_WIDTH, statusBarHeight);
-            ImGui::BeginChild("##StatusBar", statusBarSize, false, ImGuiWindowFlags_NoScrollbar);
+            // --- 5. Status bar (core fix: Force stick to bottom, use Child instead of independent window) ---
+            ImGui::SetCursorPosY(statusBarY);
+            ImGui::BeginChild(
+                "##StatusBar", 
+                ImVec2(windowWidth, statusBarActualHeight), 
+                false, // Non-scrollable
+                ImGuiWindowFlags_NoScrollbar // No scrollbar
+            );
+            // Status bar text: Left padding + vertical center (solve text offset)
+            ImGui::SetCursorPosX(4.0f);
+            ImGui::SetCursorPosY((statusBarActualHeight - lineHeight) / 2.0f);
             ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.8f, 1.0f), "%s", manager.GetStatus().c_str());
             ImGui::EndChild();
         }
 
-        // Cleanup ImGui state
         ImGui::End();
-        ImGui::PopStyleVar();
+
+        // ==============================================
+        // Restore styles (strictly match the number of Push: 2)
+        // ==============================================
+        ImGui::PopStyleVar(2);
     }
 }
 
