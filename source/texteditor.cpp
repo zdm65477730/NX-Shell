@@ -32,6 +32,7 @@ namespace Config {
     constexpr float EDITOR_WINDOW_WIDTH = 1280.0f;         // Editor window width
     constexpr float EDITOR_WINDOW_HEIGHT = 720.0f;         // Editor window height
     constexpr float STATUS_BAR_HEIGHT = 40.0f;             // Status bar height
+    constexpr float TEXT_VIEW_COMP_HEIGHT = 40.0f;         // Status bar height
     constexpr float LINE_NUMBER_OFFSET = 75.0f;            // Width of line number area (prevents cursor overlap)
     constexpr float CURSOR_WIDTH = 2.0f;                   // Cursor width in pixels
     constexpr float CURSOR_FLASH_SPEED = 6.0f;             // Cursor blink animation speed
@@ -513,6 +514,10 @@ public:
         // Calculate final cursor position
         m_cursorPos = lineStart + (validCol - 1);
         m_cursorPos = std::min(m_cursorPos, static_cast<unsigned int>(m_text.length()));
+    }
+
+    unsigned int GetCursonPosition() const {
+        return m_cursorPos;
     }
 
     // Refactored scroll logic with explicit handling for cursor moving outside viewport
@@ -1239,8 +1244,10 @@ namespace TextEditorInput {
                 core->DeactivateSelection();
                 manager.SetStatus(strings[cfg.lang][Lang::TextEditorStatusDeletedSelectedText], true);
             } else {
-                core->DeleteBackward();
-                manager.SetStatus(strings[cfg.lang][Lang::TextEditorStatusDeletedPreCharacter], true);
+                if (core->GetCursonPosition() != 0) {
+                    core->DeleteBackward();
+                    manager.SetStatus(strings[cfg.lang][Lang::TextEditorStatusDeletedPreCharacter], true);
+                }
             }
 
             // Block main interface from processing B key
@@ -1437,7 +1444,7 @@ namespace TextEditorGUI {
             // ==============================================
             // Step 3: Calculate visible lines for text area (restore original logic)
             // ==============================================
-            unsigned int visibleLines = static_cast<unsigned int>((textAreaHeight - Config::STATUS_BAR_HEIGHT) / lineSpacing);
+            unsigned int visibleLines = static_cast<unsigned int>((textAreaHeight - Config::TEXT_VIEW_COMP_HEIGHT) / lineSpacing);
             visibleLines = std::max(visibleLines, 1U); // At least 1 line to prevent no display
             core->SetVisibleLines(visibleLines);
 
