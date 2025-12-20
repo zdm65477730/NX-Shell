@@ -17,7 +17,7 @@ config_t cfg;
 
 namespace Config {
     static const char *config_path = "/switch/NX-Shell/config.json";
-    static const char *config_file = "{\n\t\"config_version\": %d,\n\t\"language\": %d,\n\t\"dev_options\": %d,\n\t\"image_filename\": %d,\n\t\"multi_lang\": %d\n}";
+    static const char *config_file = "{\n\t\"config_version\": %d,\n\t\"language\": %s,\n\t\"dev_options\": %d,\n\t\"image_filename\": %d,\n\t\"multi_lang\": %d\n}";
     static int config_version_holder = 0;
     static const int buf_size = 128;
     static const std::pair<Locale, const char*> LocaleMap[] = {
