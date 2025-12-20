@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstring>
+#include <unordered_map>
 #include <algorithm>
 
 // GL includes
@@ -11,7 +12,7 @@
 #define IMGUI_IMPL_SWITCH_HOLD_THRESHOLD 15
 
 // Add global key state storage (covers all Npad buttons)
-static ImGuiSwitchKeyState g_key_states[IMGUI_IMPL_SWITCH_NUM_BUTTONS] = {0};
+static std::unordered_map<u64, ImGuiSwitchKeyState> g_key_state_map;
 static u64 g_prev_buttons = 0;
 static u64 g_curr_buttons = 0;
 
@@ -195,30 +196,33 @@ void ImGui_ImplSwitch_Shutdown(void) {
 
 // Reset all key states (call on interface switch)
 IMGUI_IMPL_API void ImGui_ImplSwitch_ResetKeyStates(void) {
-    memset(g_key_states, 0, sizeof(g_key_states));
+    g_key_state_map.clear();
     g_prev_buttons = 0;
     g_curr_buttons = 0;
 }
 
 // Set key state for a specific button
 IMGUI_IMPL_API void ImGui_ImplSwitch_ResetKeyState(HidNpadButton key) {
-    u64 button = static_cast<u64>(key);
-    unsigned int idx = static_cast<unsigned int>(__builtin_ctzll(button));
-    if (idx >= IMGUI_IMPL_SWITCH_NUM_BUTTONS) {
+    u64 button_mask = static_cast<u64>(key);
+    if ((button_mask & (button_mask - 1)) != 0) {
         return;
     }
-    g_curr_buttons &= ~button;
-    g_prev_buttons &= ~button;
-    g_key_states[idx] = {false, false, false, 0};
+    g_curr_buttons &= ~button_mask;
+    g_prev_buttons &= ~button_mask;
+    g_key_state_map[button_mask] = {false, false, false, 0};
 }
 
 // Get key state for a specific button
 IMGUI_IMPL_API const ImGuiSwitchKeyState* ImGui_ImplSwitch_GetKeyState(HidNpadButton key) {
-    unsigned int idx = static_cast<unsigned int>(__builtin_ctzll(static_cast<u64>(key)));
-    if (idx >= IMGUI_IMPL_SWITCH_NUM_BUTTONS) {
+    u64 button_mask = static_cast<u64>(key);
+    if ((button_mask & (button_mask - 1)) != 0)
         return nullptr;
+    auto it = g_key_state_map.find(button_mask);
+    if (it == g_key_state_map.end()) {
+        g_key_state_map[button_mask] = {false, false, false, 0};
+        return &g_key_state_map[button_mask];
     }
-    return &g_key_states[idx];
+    return &it->second;
 }
 
 u64 ImGui_ImplSwitch_UpdateGamepads(void) {
@@ -234,23 +238,20 @@ u64 ImGui_ImplSwitch_UpdateGamepads(void) {
     HidAnalogStickState r_stick = padGetStickPos(&bd->pad, 1);
 
     // Update unified key states for all buttons
-    for (int i = 0; i < IMGUI_IMPL_SWITCH_NUM_BUTTONS; i++) {
-        HidNpadButton button = static_cast<HidNpadButton>(1ULL << i);
-        bool curr_pressed = (g_curr_buttons & button) != 0;
-        bool prev_pressed = (g_prev_buttons & button) != 0;
-
-        // Update hold counter
+    for (u64 i = 0; i < 64; i++) {
+        u64 button_mask = 1ULL << i;
+        bool curr_pressed = (g_curr_buttons & button_mask) != 0;
+        bool prev_pressed = (g_prev_buttons & button_mask) != 0;
+        auto &state = g_key_state_map[button_mask];
         if (curr_pressed) {
-            g_key_states[i].hold_count++;
+            state.hold_count++;
         } else {
-            g_key_states[i].hold_count = 0;
+            state.hold_count = 0;
         }
-
-        // Update key state flags
-        g_key_states[i].is_down = curr_pressed && !prev_pressed;
-        g_key_states[i].is_up = !curr_pressed && prev_pressed;
-        g_key_states[i].is_pressed = curr_pressed;
-        g_key_states[i].is_held = curr_pressed && (g_key_states[i].hold_count >= IMGUI_IMPL_SWITCH_HOLD_THRESHOLD);
+        state.is_down = curr_pressed && !prev_pressed;
+        state.is_up = !curr_pressed && prev_pressed;
+        state.is_pressed = curr_pressed;
+        state.is_held = curr_pressed && (state.hold_count >= IMGUI_IMPL_SWITCH_HOLD_THRESHOLD);
     }
 
     // Original gamepad mapping for ImGui navigation

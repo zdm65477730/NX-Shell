@@ -48,10 +48,12 @@ namespace Config {
     constexpr unsigned int DELETE_INITIAL_DELAY = 10;           // Reduced initial delay (from 20 to 10)
     constexpr unsigned int DELETE_REPEAT_INTERVAL = 5;          // Reduced repeat interval (from 10 to 5) for faster delete
     constexpr unsigned int DELETE_MAX_INTERVAL = 3;             // Maximum acceleration level (constant speed)
+
+    constexpr size_t MAX_FILE_SIZE = 768 * 1024;                // Maximum file size: 768 KB
 }
 
 namespace UTF8Utils {
-    inline int GetUTF8CharLength(char c) {
+    inline size_t GetUTF8CharLength(char c) {
         if ((c & 0x80) == 0) return 1;
         if ((c & 0xE0) == 0xC0) return 2;
         if ((c & 0xF0) == 0xE0) return 3;
@@ -64,7 +66,7 @@ namespace UTF8Utils {
         size_t i = 0;
         bytePos = std::min(bytePos, str.size());
         while (i < bytePos) {
-            int len = GetUTF8CharLength(str[i]);
+            size_t len = GetUTF8CharLength(str[i]);
             i += len;
             charIndex++;
         }
@@ -75,7 +77,7 @@ namespace UTF8Utils {
         size_t bytePos = 0;
         size_t currentChar = 0;
         while (bytePos < str.size() && currentChar < charIndex) {
-            int len = GetUTF8CharLength(str[bytePos]);
+            size_t len = GetUTF8CharLength(str[bytePos]);
             bytePos += len;
             currentChar++;
         }
@@ -103,7 +105,7 @@ namespace UTF8Utils {
 
     inline size_t GetNextCharBytePos(const std::string& str, size_t bytePos) {
         if (bytePos >= str.size()) return str.size();
-        int len = GetUTF8CharLength(str[bytePos]);
+        size_t len = GetUTF8CharLength(str[bytePos]);
         return bytePos + len;
     }
 
@@ -122,7 +124,7 @@ namespace UTF8Utils {
     inline void DeleteUTF8Char(std::string& str, size_t bytePos) {
         if (bytePos >= str.size()) return;
         bytePos = AlignToCharBoundary(str, bytePos);
-        int len = GetUTF8CharLength(str[bytePos]);
+        size_t len = GetUTF8CharLength(str[bytePos]);
         str.erase(bytePos, len);
     }
 
@@ -282,9 +284,17 @@ private:
 // Global input handler instance
 static KeyInputHandler g_keyInputHandler;
 
+class TextEditorManager;
+
 // ========== Module 2: Core Editor Logic (Pure Text Processing, Decoupled from GUI/Input) ==========
 class TextEditorCore {
 public:
+    struct LinePosition {
+        size_t start;
+        size_t end;
+        LinePosition(size_t s = 0, size_t e = 0) : start(s), end(e) {}
+    };
+
     // Undo/Redo state structure
     struct EditState {
         std::string text;
@@ -325,6 +335,8 @@ public:
         float totalWidth;
         std::vector<float> charWidths;
         std::vector<size_t> charByteOffsets;
+        std::vector<size_t> charToByte;  // char index -> byte position in line
+        std::vector<size_t> byteToChar;  // byte position in line -> char index
     };
 
     // Constructor: Initialize editor with file content
@@ -332,8 +344,8 @@ public:
         m_filePath(filePath), m_fileSize(0), m_isModified(false),
         m_cursorPos(0), m_scrollLine(1), m_visibleLines(1),
         m_lineHeight(0.0f), m_lineSpacing(0.0f), m_cacheValid(false),
-        m_scrollOffset(0.0f), m_scrollOffsetX(0.0f), m_viewportWidth(0.0f), 
-        m_usableTextWidth(0.0f) {
+        m_scrollOffset(0.0f), m_linePositionsValid(false), m_scrollOffsetX(0.0f),
+        m_viewportWidth(0.0f), m_usableTextWidth(0.0f) {
         // Load file and normalize newlines (CRLF -> LF)
         LoadFile(filePath);
 
@@ -341,6 +353,8 @@ public:
 
         // Initialize undo stack with initial state
         m_undoStack.emplace(m_text, m_cursorPos, false, true);
+        UpdateLinePositions();
+        UpdateLineCache();
     }
 
     // Insert text at current cursor position
@@ -355,7 +369,7 @@ public:
         m_text.insert(insertPos, insertText);
         m_cursorPos = static_cast<unsigned int>(insertPos + insertText.length());
         m_isModified = true;
-        m_cacheValid = false;
+        InvalidateLineCache();
         SyncScroll();
     }
 
@@ -370,7 +384,7 @@ public:
         m_text.erase(prevCharPos, deleteLen);
         m_cursorPos = static_cast<unsigned int>(prevCharPos);
         m_isModified = true;
-        m_cacheValid = false;
+        InvalidateLineCache();
         SyncScroll();
     }
 
@@ -388,7 +402,7 @@ public:
         m_cursorPos = static_cast<unsigned int>(startByte);
         m_selection.Reset();
         m_isModified = true;
-        m_cacheValid = false;
+        InvalidateLineCache();
         SyncScroll();
     }
 
@@ -439,7 +453,7 @@ public:
         m_isModified = state.isModified;
 
         // Update scroll position
-        m_cacheValid = false;
+        InvalidateLineCache();
         SyncScroll();
         return true;
     }
@@ -460,7 +474,7 @@ public:
         m_isModified = state.isModified;
 
         // Update scroll position
-        m_cacheValid = false;
+        InvalidateLineCache();
         SyncScroll();
         return true;
     }
@@ -487,8 +501,9 @@ public:
         unsigned int totalLines = GetTotalLines();
         if (lineNum < 1 || lineNum > totalLines) return;
 
-        unsigned int lineStart = GetLineStartPos(lineNum);
-        unsigned int lineEnd = GetLineEndPos(lineNum);
+        LinePosition linePos = GetLinePosition(lineNum);
+        size_t lineStart = linePos.start;
+        size_t lineEnd = linePos.end;
         std::string currentContent = m_text.substr(lineStart, lineEnd - lineStart);
 
         if (currentContent == newContent) return;
@@ -500,7 +515,7 @@ public:
         size_t newLineEnd = insertPos + newContent.length();
         m_cursorPos = static_cast<unsigned int>(std::min(newLineEnd, static_cast<size_t>(m_text.length())));
         m_isModified = true;
-        m_cacheValid = false;
+        InvalidateLineCache();
         SyncScroll();
     }
 
@@ -508,47 +523,45 @@ public:
     void MoveCursor(KeyInputHandler::Direction dir) {
         switch (dir) {
             case KeyInputHandler::Direction::Up: {
-                unsigned int line, col;
-                GetCursorLineCol(line, col);
-                if (line > 1) {
-                    unsigned int targetLine = line - 1;
-                    unsigned int targetLineStart = GetLineStartPos(targetLine);
-                    unsigned int targetLineEnd = GetLineEndPos(targetLine);
-                    unsigned int targetLineLength = targetLineEnd - targetLineStart;
-                    unsigned int maxTargetCol = targetLineLength + 1;
-                    unsigned int adjustedCol = std::min(col, maxTargetCol);
-                    SetCursorPosition(targetLine, adjustedCol);
+                unsigned int currentLine, currentCol;
+                GetCursorLineCol(currentLine, currentCol);
+                if (currentLine > 1) {
+                    size_t currentLineCharIndex = currentCol - 1;
+                    unsigned int targetLine = currentLine - 1;
+                    LinePosition targetLinePos = GetLinePosition(targetLine);
+                    std::string targetLineContent = m_text.substr(targetLinePos.start, targetLinePos.end - targetLinePos.start);
+                    size_t targetLineCharCount = UTF8Utils::GetUTF8CharCount(targetLineContent);
+                    size_t targetCharIndex = std::min(currentLineCharIndex, targetLineCharCount);
+                    unsigned int targetCol = static_cast<unsigned int>(targetCharIndex) + 1;
+                    SetCursorPosition(targetLine, targetCol);
                 }
                 break;
             }
             case KeyInputHandler::Direction::Down: {
-                unsigned int line, col;
-                GetCursorLineCol(line, col);
+                unsigned int currentLine, currentCol;
+                GetCursorLineCol(currentLine, currentCol);
                 unsigned int totalLines = GetTotalLines();
-                if (line < totalLines) {
-                    unsigned int targetLine = line + 1;
-                    unsigned int targetLineStart = GetLineStartPos(targetLine);
-                    unsigned int targetLineEnd = GetLineEndPos(targetLine);
-                    unsigned int targetLineLength = targetLineEnd - targetLineStart;
-                    unsigned int maxTargetCol = targetLineLength + 1;
-                    unsigned int adjustedCol = std::min(col, maxTargetCol);
-                    SetCursorPosition(targetLine, adjustedCol);
+                if (currentLine < totalLines) {
+                    size_t currentLineCharIndex = currentCol - 1;
+                    unsigned int targetLine = currentLine + 1;
+                    LinePosition targetLinePos = GetLinePosition(targetLine);
+                    std::string targetLineContent = m_text.substr(targetLinePos.start, targetLinePos.end - targetLinePos.start);
+                    size_t targetLineCharCount = UTF8Utils::GetUTF8CharCount(targetLineContent);
+                    size_t targetCharIndex = std::min(currentLineCharIndex, targetLineCharCount);
+                    unsigned int targetCol = static_cast<unsigned int>(targetCharIndex) + 1;
+                    SetCursorPosition(targetLine, targetCol);
                 }
                 break;
             }
             case KeyInputHandler::Direction::Left: {
                 if (m_cursorPos == 0) break;
-                size_t charIndex = UTF8Utils::ByteToCharIndex(m_text, m_cursorPos);
-                size_t newBytePos = UTF8Utils::CharToByteIndex(m_text, charIndex - 1);
-                newBytePos = UTF8Utils::AlignToCharBoundary(m_text, newBytePos);
+                size_t newBytePos = UTF8Utils::GetPrevCharBytePos(m_text, m_cursorPos);
                 m_cursorPos = static_cast<unsigned int>(newBytePos);
                 break;
             }
             case KeyInputHandler::Direction::Right: {
-                if (m_cursorPos >= m_text.length()) break;
-                size_t charIndex = UTF8Utils::ByteToCharIndex(m_text, m_cursorPos);
-                size_t newBytePos = UTF8Utils::CharToByteIndex(m_text, charIndex + 1);
-                newBytePos = UTF8Utils::AlignToCharBoundary(m_text, newBytePos);
+                if (m_cursorPos >= m_text.size()) break;
+                size_t newBytePos = UTF8Utils::GetNextCharBytePos(m_text, m_cursorPos);
                 m_cursorPos = static_cast<unsigned int>(newBytePos);
                 break;
             }
@@ -567,9 +580,7 @@ public:
     }
 
     // Deactivate text selection
-    void DeactivateSelection() {
-        m_selection.Reset();
-    }
+    void DeactivateSelection() { m_selection.Reset(); }
 
     // Extend selection in specified direction
     void ExtendSelection(KeyInputHandler::Direction dir) {
@@ -590,19 +601,27 @@ public:
     void SetCursorPosition(unsigned int targetLine, unsigned int targetCol) {
         unsigned int totalLines = GetTotalLines();
         targetLine = std::clamp(targetLine, 1U, totalLines);
-        unsigned int lineStart = GetLineStartPos(targetLine);
-        unsigned int lineEnd = GetLineEndPos(targetLine);
+
+        LinePosition linePos = GetLinePosition(targetLine);
+        size_t lineStart = linePos.start;
+        size_t lineEnd = linePos.end;
         std::string lineContent = m_text.substr(lineStart, lineEnd - lineStart);
+
         size_t targetCharIndex = static_cast<size_t>(std::max(targetCol - 1, 0U));
-        size_t targetByteInLine = UTF8Utils::CharToByteIndex(lineContent, targetCharIndex);
+        size_t targetByteInLine = 0;
+        if (m_cacheValid && targetLine <= m_lineCache.size()) {
+            const auto& lineCache = m_lineCache[targetLine - 1];
+            targetCharIndex = std::clamp(targetCharIndex, 0UL, lineCache.charCount);
+            targetByteInLine = lineCache.charToByte[targetCharIndex];
+        } else {
+            targetByteInLine = UTF8Utils::CharToByteIndex(lineContent, targetCharIndex);
+        }
         size_t targetBytePos = lineStart + targetByteInLine;
         targetBytePos = UTF8Utils::AlignToCharBoundary(m_text, targetBytePos);
         m_cursorPos = static_cast<unsigned int>(std::clamp(targetBytePos, 0UL, static_cast<size_t>(m_text.length())));
     }
 
-    unsigned int GetCursorPosition() const {
-        return m_cursorPos;
-    }
+    unsigned int GetCursorPosition() const { return m_cursorPos; }
 
     // Horizontal Scroll Methods
     void SetViewportWidth(float width) {
@@ -621,9 +640,7 @@ public:
         }
     }
 
-    float GetScrollOffsetX() const {
-        return m_scrollOffsetX;
-    }
+    float GetScrollOffsetX() const { return m_scrollOffsetX; }
 
     float GetCursorHorizontalPos(unsigned int cursorLine, unsigned int cursorCol) const {
         const auto& lineCache = GetLineCache();
@@ -820,8 +837,10 @@ public:
 
     // Get total number of lines in text
     unsigned int GetTotalLines() const {
-        if (m_text.empty()) return 1;
-        return std::count(m_text.begin(), m_text.end(), '\n') + 1;
+        if (!m_linePositionsValid) {
+            return m_text.empty() ? 1 : std::count(m_text.begin(), m_text.end(), '\n') + 1;
+        }
+        return static_cast<unsigned int>(m_linePositions.size());
     }
 
     // Precisely calculate cursor line/column (fixes first line/column display issue)
@@ -835,23 +854,15 @@ public:
             return;
         }
 
-        size_t currentBytePos = 0;
-        line = 1;
-        while (currentBytePos < cursorBytePos) {
-            if (m_text[currentBytePos] == '\n') {
-                line++;
-                currentBytePos++;
-            } else {
-                int charLen = UTF8Utils::GetUTF8CharLength(m_text[currentBytePos]);
-                currentBytePos += charLen;
-            }
-        }
+        line = FindLineByBytePos(cursorBytePos);
+        LinePosition linePos = GetLinePosition(line);
+        size_t lineStart = linePos.start;
+        size_t cursorInLineByte = cursorBytePos - lineStart;
+        std::string lineContent = m_text.substr(lineStart, linePos.end - lineStart);
 
-        unsigned int lineStartByte = GetLineStartPos(line);
-        unsigned int lineEndByte = GetLineEndPos(line);
-        std::string lineContent = m_text.substr(lineStartByte, lineEndByte - lineStartByte);
-        size_t cursorInLineByte = cursorBytePos - lineStartByte;
-        col = static_cast<unsigned int>(UTF8Utils::ByteToCharIndex(lineContent, cursorInLineByte)) + 1;
+        size_t cursorInLineChar = UTF8Utils::ByteToCharIndex(lineContent, cursorInLineByte);
+        col = static_cast<unsigned int>(cursorInLineChar) + 1;
+
         size_t lineCharCount = UTF8Utils::GetUTF8CharCount(lineContent);
         unsigned int maxCol = static_cast<unsigned int>(lineCharCount) + 1;
         col = std::clamp(col, 1U, maxCol);
@@ -882,9 +893,7 @@ public:
     // Get line height (for rendering)
     float GetLineHeight() const { return m_lineHeight; }
 
-    void SetLineSpacing(float spacing) {
-        m_lineSpacing = spacing;
-    }
+    void SetLineSpacing(float spacing) { m_lineSpacing = spacing; }
 
     // Set line height (from GUI)
     void SetLineHeight(float height) {
@@ -893,9 +902,7 @@ public:
     }
 
     // Get total content height (total lines * line spacing) for ImGui scrollbar calculation
-    float GetTotalContentHeight() const {
-        return static_cast<float>(GetTotalLines()) * m_lineSpacing;
-    }
+    float GetTotalContentHeight() const { return static_cast<float>(GetTotalLines()) * m_lineSpacing; }
 
     // Get number of visible lines (viewport height / line height)
     unsigned int GetVisibleLines() const { return m_visibleLines; }
@@ -908,123 +915,171 @@ public:
     }
 
     // Get start position of specified line (public for GUI/input access)
-    unsigned int GetLineStartPos(unsigned int line) const {
-        unsigned int targetLine = std::clamp(line, 1U, GetTotalLines());
-        unsigned int currentLine = 1;
-        unsigned int pos = 0;
-        size_t len = m_text.length();
+    unsigned int GetLineStartPos(unsigned int line) const { return static_cast<unsigned int>(GetLinePosition(line).start); }
 
-        // Iterate to find start of target line
-        while (pos < len && currentLine < targetLine) {
-            if (m_text[pos] == '\n') {
-                currentLine++;
+    // Get end position of specified line (public for GUI/input access)
+    unsigned int GetLineEndPos(unsigned int line) const { return static_cast<unsigned int>(GetLinePosition(line).end); }
+
+    LinePosition GetLinePosition(unsigned int line) const {
+        unsigned int totalLines = GetTotalLines();
+        line = std::clamp(line, 1U, totalLines);
+        if (!m_linePositionsValid || line > m_linePositions.size()) {
+            size_t start = 0;
+            size_t end = 0;
+            size_t pos = 0;
+            unsigned int currentLine = 1;
+            size_t len = m_text.length();
+
+            while (pos < len && currentLine < line) {
+                if (m_text[pos] == '\n') {
+                    currentLine++;
+                    start = pos + 1;
+                }
+                pos++;
+            }
+
+            end = start;
+            while (end < len && m_text[end] != '\n') {
+                end++;
+            }
+
+            return LinePosition(start, end);
+        }
+
+        return m_linePositions[line - 1];
+    }
+
+    void UpdateLinePositions() {
+        if (m_linePositionsValid)
+            return;
+
+        m_linePositions.clear();
+        size_t len = m_text.length();
+        size_t start = 0;
+        size_t pos = 0;
+        while (pos <= len) {
+            if (pos == len || m_text[pos] == '\n') {
+                m_linePositions.emplace_back(start, pos);
+                start = pos + 1;
             }
             pos++;
         }
-        return pos;
-    }
-
-    // Get end position of specified line (public for GUI/input access)
-    unsigned int GetLineEndPos(unsigned int line) const {
-        unsigned int start = GetLineStartPos(line);
-        unsigned int end = start;
-        size_t len = m_text.length();
-        // Find end of line (newline or end of text)
-        while (end < len && m_text[end] != '\n') {
-            end++;
-        }
-        return end;
+        m_linePositionsValid = true;
     }
 
     float GetScrollOffset() const { return m_scrollOffset; }
 
     void SetScrollOffset(float offset) { m_scrollOffset = offset; }
 
+    // Update LineCache (optimized with line positions cache and incremental update)
     void UpdateLineCache() {
-        if (m_cacheValid || m_lineHeight <= 0) return;
+        UpdateLinePositions();
+        if (m_cacheValid || m_lineHeight <= 0 || m_linePositions.empty())
+            return;
 
         m_lineCache.clear();
-        m_lineCache.reserve(GetTotalLines());
-        size_t pos = 0;
-        size_t len = m_text.length();
-        unsigned int currentLineStart = 0;
-        // FIX: Remove static to ensure consistent tab width calculation (static caused stale values)
+        m_lineCache.reserve(m_linePositions.size());
         float spaceWidth = ImGui::CalcTextSize(" ").x;
-        const float tabWidth = 4 * spaceWidth; // 4 spaces per tab (consistent with rendering)
-        while (pos <= len) {
-            if (pos == len || m_text[pos] == '\n') {
-                LineCache line;
-                line.content = m_text.substr(currentLineStart, pos - currentLineStart);
-                line.startPos = currentLineStart;
-                line.byteLength = line.content.size();
-                line.charCount = UTF8Utils::GetUTF8CharCount(line.content);
-                line.charByteOffsets.clear();
-                line.charWidths.clear();
-                line.charByteOffsets.reserve(line.charCount + 1);
-                line.charWidths.reserve(line.charCount + 1);
-                line.charByteOffsets.push_back(0);
-                line.charWidths.push_back(0.0f);
-                float currentWidth = 0.0f;
-                size_t bytePos = 0;
-                size_t charIdx = 0;
-                while (bytePos < line.byteLength) {
-                    int charLen = UTF8Utils::GetUTF8CharLength(line.content[bytePos]);
-                    std::string utf8Char = line.content.substr(bytePos, charLen);
-                    float charW = 0.0f;
-                    if (utf8Char == "\t") {
-                        charW = tabWidth;
-                    } else {
-                        charW = ImGui::CalcTextSize(utf8Char.c_str()).x;
-                    }
-                    currentWidth += charW;
-                    charIdx++;
-                    line.charByteOffsets.push_back(bytePos + charLen);
-                    line.charWidths.push_back(currentWidth);
-                    bytePos += charLen;
+        const float tabWidth = 4 * spaceWidth;
+
+        for (const auto& linePos : m_linePositions) {
+            LineCache line;
+            line.content = m_text.substr(linePos.start, linePos.end - linePos.start);
+            line.startPos = static_cast<unsigned int>(linePos.start);
+            line.byteLength = line.content.size();
+            line.charCount = UTF8Utils::GetUTF8CharCount(line.content);
+
+            line.charToByte.reserve(line.charCount + 1);
+            line.byteToChar.reserve(line.byteLength + 1);
+            line.charWidths.reserve(line.charCount + 1);
+            line.charByteOffsets.reserve(line.charCount + 1);
+            line.charToByte.push_back(0);
+            line.byteToChar.push_back(0);
+            line.charWidths.push_back(0.0f);
+            line.charByteOffsets.push_back(0);
+
+            float currentWidth = 0.0f;
+            size_t bytePos = 0;
+            size_t charIdx = 0;
+
+            while (bytePos < line.byteLength) {
+                size_t charLen = UTF8Utils::GetUTF8CharLength(line.content[bytePos]);
+                std::string utf8Char = line.content.substr(bytePos, charLen);
+                float charW = (utf8Char == "\t") ? tabWidth : ImGui::CalcTextSize(utf8Char.c_str()).x;
+                for (size_t i = 0; i < charLen; i++) {
+                    line.byteToChar.push_back(charIdx);
                 }
 
-                line.totalWidth = currentWidth;
-                m_lineCache.push_back(line);
-                currentLineStart = pos + 1;
+                currentWidth += charW;
+                charIdx++;
+                line.charToByte.push_back(bytePos + charLen);
+                line.charByteOffsets.push_back(bytePos + charLen);
+                line.charWidths.push_back(currentWidth);
+
+                bytePos += charLen;
             }
-            pos++;
+
+            while (line.byteToChar.size() <= line.byteLength) {
+                line.byteToChar.push_back(line.charCount);
+            }
+
+            line.charToByte.push_back(line.byteLength);
+            line.charWidths.push_back(currentWidth);
+            line.charByteOffsets.push_back(line.byteLength);
+            line.totalWidth = currentWidth;
+
+            m_lineCache.push_back(line);
         }
+
         m_cacheValid = true;
     }
 
-    const std::vector<LineCache>& GetLineCache() const {
-        return m_lineCache;
+    const std::vector<LineCache>& GetLineCache() const { return m_lineCache; }
+
+    unsigned int FindLineByBytePos(size_t bytePos) const {
+        if (m_linePositions.empty() || !m_linePositionsValid) {
+            unsigned int line = 1;
+            size_t pos = 0;
+            size_t len = m_text.length();
+
+            while (pos < len && pos < bytePos) {
+                if (m_text[pos] == '\n') {
+                    line++;
+                }
+                pos++;
+            }
+
+            return line;
+        }
+
+        unsigned int left = 0;
+        unsigned int right = static_cast<unsigned int>(m_linePositions.size()) - 1;
+        unsigned int result = right;
+        while (left <= right) {
+            unsigned int mid = (left + right) / 2;
+            const auto& linePos = m_linePositions[mid];
+            if (linePos.start <= bytePos) {
+                result = mid;
+                left = mid + 1;
+            } else {
+                right = mid - 1;
+            }
+        }
+
+        return result + 1;
     }
 
-    void InvalidateLineCache() {
+    void InvalidateLineCache(bool invalidateLinePositions = true) {
         m_cacheValid = false;
+        if (invalidateLinePositions)
+            m_linePositionsValid = false;
     }
 
     size_t GetFileSize() const { return m_fileSize; }
 
 private:
     // Load file content and normalize newlines
-    void LoadFile(const std::string& filePath) {
-        std::ifstream file(filePath, std::ios::binary);
-        if (file.is_open()) {
-            file.seekg(0, std::ios::end);
-            const std::streampos filePos = file.tellg();
-            if (filePos != std::streampos(-1) && filePos >= 0) {
-                const uint64_t fileSize64 = static_cast<uint64_t>(filePos);
-                if (fileSize64 <= std::numeric_limits<size_t>::max()) {
-                    m_fileSize = static_cast<size_t>(fileSize64);
-                }
-            }
-            file.seekg(0, std::ios::beg);
-
-            std::stringstream buffer;
-            buffer << file.rdbuf();
-            m_text = buffer.str();
-            file.close();
-            // Normalize CRLF to LF
-            NormalizeNewlines(m_text);
-        }
-    }
+    void LoadFile(const std::string& filePath);
 
     // Push current state to undo stack (trim stack if needed)
     void PushUndoState() {
@@ -1084,6 +1139,8 @@ private:
     std::vector<LineCache> m_lineCache;
     bool m_cacheValid;
     float m_scrollOffset;                        // Scroll offset (in pixels)
+    std::vector<LinePosition> m_linePositions;
+    bool m_linePositionsValid;
 
     // Pixel-level horizontal scroll state variables
     float m_scrollOffsetX;                       // Horizontal scroll offset (in pixels)
@@ -1094,6 +1151,10 @@ private:
 // ========== Module 3: Editor Manager (Singleton, Lifecycle/Global State Management) ==========
 class TextEditorManager {
 public:
+    bool IsShowFileTooLargePopup() const { return m_showFileTooLargePopup; }
+
+    void SetShowFileTooLargePopup(bool val) { m_showFileTooLargePopup = val; }
+
     // Singleton instance access
     static TextEditorManager& GetInstance() {
         static TextEditorManager instance;
@@ -1212,8 +1273,11 @@ public:
     void SetConfirmExit(bool val) { m_confirmExit = val; }
     
     // Get core editor instance
-    TextEditorCore* GetCore() { return m_core.get(); }
-    
+    TextEditorCore* GetCore() { 
+        if (!m_core) return nullptr;
+        return m_core.get();
+    }
+
     // Get current file path
     const std::string& GetFilePath() const { return m_filePath; }
     
@@ -1238,7 +1302,52 @@ private:
     bool m_confirmExit = false;                              // Exit confirmation flag
     bool m_isKeyboardPopup = false;                          // Keyboard popup active flag
     bool m_firstLoad = true;                                 // First load frame flag
+    bool m_showFileTooLargePopup = false;
 };
+
+void TextEditorCore::LoadFile(const std::string& filePath) {
+     std::ifstream file(filePath, std::ios::binary);
+     if (file.is_open()) {
+         // Get file size from file stream
+         file.seekg(0, std::ios::end);
+         const std::streampos filePos = file.tellg();
+         if (filePos != std::streampos(-1) && filePos >= 0) {
+             const uint64_t fileSize64 = static_cast<uint64_t>(filePos);
+             // Convert file size to size_t (ensure it's within the range of size_t)
+             if (fileSize64 <= std::numeric_limits<size_t>::max()) {
+                 m_fileSize = static_cast<size_t>(fileSize64);
+             } else {
+                 // Mark file size as exceeding limit if it's larger than size_t can hold
+                 m_fileSize = Config::MAX_FILE_SIZE + 1;
+             }
+         } else {
+             // Failed to get file size, close file and return early
+             file.close();
+             return;
+         }
+
+         // Check if file size exceeds the maximum allowed size (MAX_FILE_SIZE)
+         if (m_fileSize >= Config::MAX_FILE_SIZE) {
+             file.close(); // Close the file handle before exiting
+             // Set popup state
+             TextEditorManager::GetInstance().SetShowFileTooLargePopup(true);
+             return; // Terminate file loading process
+         }
+
+         // Proceed to read file content if size is within the limit
+         file.seekg(0, std::ios::beg);
+         m_text.reserve(m_fileSize);
+         char buffer[8192];
+         while (file.read(buffer, sizeof(buffer))) {
+             m_text.append(buffer, sizeof(buffer));
+         }
+         m_text.append(buffer, file.gcount());
+         file.close();
+
+         // Normalize CRLF to LF (unified newline format)
+         NormalizeNewlines(m_text);
+     }
+ }
 
 // ========== Module 4: Input Adapter (Maps Input to Editor Operations) ==========
 namespace TextEditorInput {
@@ -1606,12 +1715,12 @@ namespace TextEditorGUI {
         ImGui::Dummy(ImVec2(0.0f, std::max((lineSpacing - lineHeight) * 0.5f, 0.0f)));
     }
 
-    // Refactored text content rendering: Fix last 5 lines not showing and viewEnd mismatch
+    // Render text content (modified to use optimized LineCache)
     void RenderTextContent(TextEditorCore* core, float lineHeight, float lineSpacing, float textAreaHeight) {
         // Update core settings and line cache before rendering
         core->SetLineHeight(lineHeight);
         core->SetLineSpacing(lineSpacing);
-        core->InvalidateLineCache();
+        core->UpdateLinePositions();
         core->UpdateLineCache();
 
         // Get line cache data and total lines
@@ -1716,7 +1825,48 @@ namespace TextEditorGUI {
         auto& manager = TextEditorManager::GetInstance();
         if (!manager.IsActive()) return;
 
+        // Render file too large popup
+        if (manager.IsShowFileTooLargePopup()) {
+            // Set popup properties: centered, fixed size, modal (block other operations)
+            ImGui::OpenPopup("FileTooLargePopup");
+            ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+            ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+            ImGui::SetNextWindowSize(ImVec2(400, 150), ImGuiCond_Always);
+
+            // Draw popup
+            if (ImGui::BeginPopupModal(
+                "FileTooLargePopup", 
+                nullptr, 
+                ImGuiWindowFlags_Modal | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar
+            )) {
+                // Show prompt text (centered)
+                ImGui::SetCursorPosY((ImGui::GetWindowSize().y - 40) / 2);
+                std::string text = strings[cfg.lang][Lang::TextEditorExitPrompt];
+                ImVec2 textSize = ImGui::CalcTextSize(text.c_str());
+                ImVec2 windowSize = ImGui::GetWindowSize();
+                ImGui::SetCursorPosX((windowSize.x - textSize.x) / 2);
+                ImGui::Text("%s", text.c_str());
+
+                // Draw confirm button (centered)
+                ImVec2 buttonSize(120, 40);
+                ImVec2 buttonPos((ImGui::GetWindowSize().x - buttonSize.x) / 2, ImGui::GetWindowSize().y - 50);
+                ImGui::SetCursorPos(buttonPos);
+                if (ImGui::Button(strings[cfg.lang][Lang::CommonYes], buttonSize)) {
+                    // 1. Switch to file browser interface (global state)
+                    data.state = WINDOW_STATE_FILEBROWSER;
+                    // 2. Shutdown the text editor instance
+                    manager.Shutdown();
+                    // 3. Close the popup
+                    manager.SetShowFileTooLargePopup(false);
+                }
+
+                ImGui::EndPopup();
+            }
+        }
+
         TextEditorCore* core = manager.GetCore();
+        if (!core)
+            return;
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));

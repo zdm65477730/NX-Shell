@@ -142,6 +142,7 @@ enum class Lang {
     TextEditorStatusDeleteForwardCharacter,
     TextEditorStatusInsertNewLine,
     TextEditorControls,
+    TextEditorExitPrompt,
 };
 
 extern std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings;

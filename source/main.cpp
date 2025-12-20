@@ -86,7 +86,12 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+    data.state = WINDOW_STATE_FILEBROWSER;
+    data.selected = 0;
     data.checkbox_data.checked.resize(data.entries.size());
+    data.checkbox_data.cwd = cwd;
+    data.checkbox_data.device = device;
+
     FS::GetUsedStorageSpace(data.used_storage);
     FS::GetTotalStorageSpace(data.total_storage);
 

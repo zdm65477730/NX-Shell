@@ -27,9 +27,9 @@ namespace Windows {
     void ResetCheckbox(WindowData &data) {
         data.checkbox_data.checked.clear();
         data.checkbox_data.checked_copy.clear();
-        data.checkbox_data.checked.resize(data.entries.size());
-        data.checkbox_data.checked.assign(data.checkbox_data.checked.size(), false);
+        data.checkbox_data.checked.resize(data.entries.size(), false);
         data.checkbox_data.cwd = "";
+        data.checkbox_data.device = "";
         data.checkbox_data.count = 0;
     };
 
@@ -66,7 +66,6 @@ namespace Windows {
                 TextEditor::HandleInput(key);
                 break;
             default:
-                ImGui_ImplSwitch_ResetKeyStates();
                 break;
         }
 
@@ -75,15 +74,20 @@ namespace Windows {
             if ((key & HidNpadButton_X) && (data.state == WINDOW_STATE_FILEBROWSER))
                 data.state = WINDOW_STATE_OPTIONS;
 
-            if ((key & HidNpadButton_Y) && (data.state == WINDOW_STATE_FILEBROWSER)) {
-                if ((data.checkbox_data.cwd.length() != 0) && (data.checkbox_data.cwd != cwd))
-                    Windows::ResetCheckbox(data);
-
-                if ((std::strncmp(data.entries[data.selected].name, "..", 2)) != 0) {
-                    data.checkbox_data.cwd = cwd;
-                    data.checkbox_data.device = device;
-                    data.checkbox_data.checked.at(data.selected) = !data.checkbox_data.checked.at(data.selected);
-                    data.checkbox_data.count = std::count(data.checkbox_data.checked.begin(), data.checkbox_data.checked.end(), true);
+            if (data.state == WINDOW_STATE_FILEBROWSER) {
+                static bool prev_y_pressed = false;
+                bool curr_y_pressed = (key & HidNpadButton_Y) != 0;
+                bool y_just_pressed = curr_y_pressed && !prev_y_pressed;
+                prev_y_pressed = curr_y_pressed;
+                if (y_just_pressed) {
+                    if ((data.checkbox_data.cwd.length() != 0) && (data.checkbox_data.cwd != cwd))
+                        Windows::ResetCheckbox(data);
+                    if ((std::strncmp(data.entries[data.selected].name, "..", 2)) != 0) {
+                        data.checkbox_data.checked[data.selected] = !data.checkbox_data.checked[data.selected];
+                        data.checkbox_data.count += data.checkbox_data.checked[data.selected] ? 1 : -1;
+                        data.checkbox_data.cwd = cwd;
+                        data.checkbox_data.device = device;
+                    }
                 }
             }
         }

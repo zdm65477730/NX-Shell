@@ -105,6 +105,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeleteForwardCharacter, "次の文字を削除"},
             {Lang::TextEditorStatusInsertNewLine, "新しい行を挿入"},
             {Lang::TextEditorControls, "| \uE0EF 保存 | \uE0F0 終了 | \uE0E0 編集 | \uE0E1 削除 | \uE0E6 元に戻す | \uE0E7 やり直す | \uE0E4+\uE0ED/\uE0EE 選択 | \uE0E2 コピー | \uE0E3 貼り付け | \uE0E5 検索 |"},
+            {Lang::TextEditorExitPrompt, "ファイルが大きすぎます。アプレットモード以外で実行してください！"},
         }
     },
     {
@@ -209,6 +210,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeleteForwardCharacter,  "Deleted forward character"},
             {Lang::TextEditorStatusInsertNewLine,  "Inserted new line"},
             {Lang::TextEditorControls, "| \uE0EF Save | \uE0F0 Exit | \uE0E0 Edit | \uE0E1 Delete | \uE0E6 Undo | \uE0E7 Redo | \uE0E4+\uE0ED/\uE0EE Select | \uE0E2 Copy | \uE0E3 Paste | \uE0E5 Search |"},
+            {Lang::TextEditorExitPrompt, "File is too large. Please run in non-applet mode!"},
         }
     },
     {
@@ -313,6 +315,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeleteForwardCharacter, "Caractère suivant supprimé"},
             {Lang::TextEditorStatusInsertNewLine, "Nouvelle ligne insérée"},
             {Lang::TextEditorControls, "| \uE0EF Enregistrer | \uE0F0 Quitter | \uE0E0 Modifier | \uE0E1 Supprimer | \uE0E6 Annuler | \uE0E7 Rétablir | \uE0E4+\uE0ED/\uE0EE Sélectionner | \uE0E2 Copier | \uE0E3 Coller | \uE0E5 Rechercher |"},
+            {Lang::TextEditorExitPrompt, "Le fichier est trop volumineux. Veuillez exécuter en mode non applet !"},
         }
     },
     {
@@ -417,6 +420,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeleteForwardCharacter, "Vorwärtszeichen gelöscht"},
             {Lang::TextEditorStatusInsertNewLine, "Neue Zeile eingefügt"},
             {Lang::TextEditorControls, "| \uE0EF Speichern | \uE0F0 Beenden | \uE0E0 Bearbeiten | \uE0E1 Löschen | \uE0E6 Rückgängig | \uE0E7 Wiederherstellen | \uE0E4+\uE0ED/\uE0EE Auswählen | \uE0E2 Kopieren | \uE0E3 Einfügen | \uE0E5 Suchen |"},
+            {Lang::TextEditorExitPrompt, "Datei ist zu groß. Bitte im Nicht-Applet-Modus ausführen!"},
         }
     },
     {
@@ -521,6 +525,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeleteForwardCharacter, "Carattere successivo cancellato"},
             {Lang::TextEditorStatusInsertNewLine, "Nuova riga inserita"},
             {Lang::TextEditorControls, "| \uE0EF Salvare | \uE0F0 Uscire | \uE0E0 Modificare | \uE0E1 Eliminare | \uE0E6 Annullare | \uE0E7 Ripristinare | \uE0E4+\uE0ED/\uE0EE Selezionare | \uE0E2 Copiare | \uE0E3 Incollare | \uE0E5 Cercare |"},
+            {Lang::TextEditorExitPrompt, "Il file è troppo grande. Esegui in modalità non applet!"},
         }
     },
     {
@@ -625,6 +630,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeleteForwardCharacter, "Carácter siguiente eliminado"},
             {Lang::TextEditorStatusInsertNewLine, "Nueva línea insertada"},
             {Lang::TextEditorControls, "| \uE0EF Guardar | \uE0F0 Salir | \uE0E0 Editar | \uE0E1 Eliminar | \uE0E6 Deshacer | \uE0E7 Rehacer | \uE0E4+\uE0ED/\uE0EE Seleccionar | \uE0E2 Copiar | \uE0E3 Pegar | \uE0E5 Buscar |"},
+            {Lang::TextEditorExitPrompt, "El archivo es demasiado grande. Ejecuta en modo no applet!"},
         }
     },
     {
@@ -729,6 +735,7 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeleteForwardCharacter, "已删除下一个字符"},
             {Lang::TextEditorStatusInsertNewLine, "已插入新行"},
             {Lang::TextEditorControls, "| \uE0EF 保存 | \uE0F0 退出 | \uE0E0 编辑 | \uE0E1 删除 | \uE0E6 撤销 | \uE0E7 重做 | \uE0E4+\uE0ED/\uE0EE 选择 | \uE0E2 复制 | \uE0E3 粘贴 | \uE0E5 搜索 |"},
+            {Lang::TextEditorExitPrompt, "文件太大，请在非Applet模式下运行！"},
         }
     },
     {
@@ -832,7 +839,8 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeletedPreCharacter, "백스페이스 (이전 문자 삭제됨)"},
             {Lang::TextEditorStatusDeleteForwardCharacter, "다음 문자 삭제됨"},
             {Lang::TextEditorStatusInsertNewLine, "새 줄 삽입됨"},
-            {Lang::TextEditorControls, "| \uE0EF 저장 | \uE0F0 종료 | \uE0E0 편집 | \uE0E1 삭제 | \uE0E6 실행 취소 | \uE0E7 다시 실행 | \uE0E4+\uE0ED/\uE0EE 선택 | \uE0E2 복사 | \uE0E3 붙여넣기 | \uE0E5 검색 |"}
+            {Lang::TextEditorControls, "| \uE0EF 저장 | \uE0F0 종료 | \uE0E0 편집 | \uE0E1 삭제 | \uE0E6 실행 취소 | \uE0E7 다시 실행 | \uE0E4+\uE0ED/\uE0EE 선택 | \uE0E2 복사 | \uE0E3 붙여넣기 | \uE0E5 검색 |"},
+            {Lang::TextEditorExitPrompt, "파일이 너무 큽니다. 애플릿 모드가 아닌 모드에서 실행하세요!"},
         }
     },
     {
@@ -936,7 +944,8 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeletedPreCharacter, "Backspace (vorig teken verwijderd)"},
             {Lang::TextEditorStatusDeleteForwardCharacter, "Volgend teken verwijderd"},
             {Lang::TextEditorStatusInsertNewLine, "Nieuwe regel ingevoegd"},
-            {Lang::TextEditorControls, "| \uE0EF Opslaan | \uE0F0 Afsluiten | \uE0E0 Bewerken | \uE0E1 Verwijderen | \uE0E6 Ongedaan maken | \uE0E7 Opnieuw | \uE0E4+\uE0ED/\uE0EE Selecteren | \uE0E2 Kopiëren | \uE0E3 Plakken | \uE0E5 Zoeken |"}
+            {Lang::TextEditorControls, "| \uE0EF Opslaan | \uE0F0 Afsluiten | \uE0E0 Bewerken | \uE0E1 Verwijderen | \uE0E6 Ongedaan maken | \uE0E7 Opnieuw | \uE0E4+\uE0ED/\uE0EE Selecteren | \uE0E2 Kopiëren | \uE0E3 Plakken | \uE0E5 Zoeken |"},
+            {Lang::TextEditorExitPrompt, "Bestand is te groot. Voer uit in niet-appletmodus!"},
         }
     },
     {
@@ -1040,7 +1049,8 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeletedPreCharacter, "Backspace (caractere anterior excluído)"},
             {Lang::TextEditorStatusDeleteForwardCharacter, "Próximo caractere excluído"},
             {Lang::TextEditorStatusInsertNewLine, "Nova linha inserida"},
-            {Lang::TextEditorControls, "| \uE0EF Salvar | \uE0F0 Sair | \uE0E0 Editar | \uE0E1 Excluir | \uE0E6 Desfazer | \uE0E7 Refazer | \uE0E4+\uE0ED/\uE0EE Selecionar | \uE0E2 Copiar | \uE0E3 Colar | \uE0E5 Pesquisar |"}
+            {Lang::TextEditorControls, "| \uE0EF Salvar | \uE0F0 Sair | \uE0E0 Editar | \uE0E1 Excluir | \uE0E6 Desfazer | \uE0E7 Refazer | \uE0E4+\uE0ED/\uE0EE Selecionar | \uE0E2 Copiar | \uE0E3 Colar | \uE0E5 Pesquisar |"},
+            {Lang::TextEditorExitPrompt, "O arquivo é muito grande. Execute no modo não applet!"},
         }
     },
     {
@@ -1144,7 +1154,8 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeletedPreCharacter, "Backspace (удалён предыдущий символ)"},
             {Lang::TextEditorStatusDeleteForwardCharacter, "Удалён следующий символ"},
             {Lang::TextEditorStatusInsertNewLine, "Вставлена новая строка"},
-            {Lang::TextEditorControls, "| \uE0EF Сохранить | \uE0F0 Выйти | \uE0E0 Редактировать | \uE0E1 Удалить | \uE0E6 Отменить | \uE0E7 Повторить | \uE0E4+\uE0ED/\uE0EE Выделить | \uE0E2 Копировать | \uE0E3 Вставить | \uE0E5 Найти |"}
+            {Lang::TextEditorControls, "| \uE0EF Сохранить | \uE0F0 Выйти | \uE0E0 Редактировать | \uE0E1 Удалить | \uE0E6 Отменить | \uE0E7 Повторить | \uE0E4+\uE0ED/\uE0EE Выделить | \uE0E2 Копировать | \uE0E3 Вставить | \uE0E5 Найти |"},
+            {Lang::TextEditorExitPrompt, "Файл слишком большой. Запустите в неапплетном режиме!"},
         }
     },
     {
@@ -1248,7 +1259,8 @@ std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings = {
             {Lang::TextEditorStatusDeletedPreCharacter, "退格鍵（已刪除前一個字元）"},
             {Lang::TextEditorStatusDeleteForwardCharacter, "已刪除下一個字元"},
             {Lang::TextEditorStatusInsertNewLine, "已插入新行"},
-            {Lang::TextEditorControls, "| \uE0EF 儲存 | \uE0F0 退出 | \uE0E0 編輯 | \uE0E1 刪除 | \uE0E6 復原 | \uE0E7 重做 | \uE0E4+\uE0ED/\uE0EE 選擇 | \uE0E2 複製 | \uE0E3 貼上 | \uE0E5 搜尋 |"}
+            {Lang::TextEditorControls, "| \uE0EF 儲存 | \uE0F0 退出 | \uE0E0 編輯 | \uE0E1 刪除 | \uE0E6 復原 | \uE0E7 重做 | \uE0E4+\uE0ED/\uE0EE 選擇 | \uE0E2 複製 | \uE0E3 貼上 | \uE0E5 搜尋 |"},
+            {Lang::TextEditorExitPrompt, "檔案太大，請在非Applet模式下執行！"},
         }
     }
 };
