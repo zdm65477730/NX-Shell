@@ -1284,6 +1284,11 @@ public:
     // Check if editor is active (initialized)
     bool IsActive() const { return m_core != nullptr; }
 
+    bool IsApplet() const {
+        const auto type = appletGetAppletType();
+        return type != AppletType_Application && type != AppletType_SystemApplication;
+    }
+
 private:
     // Private constructor/destructor (singleton pattern)
     TextEditorManager() = default;
@@ -1327,7 +1332,7 @@ void TextEditorCore::LoadFile(const std::string& filePath) {
          }
 
          // Check if file size exceeds the maximum allowed size (MAX_FILE_SIZE)
-         if (m_fileSize >= Config::MAX_FILE_SIZE) {
+         if (TextEditorManager::GetInstance().IsApplet() && m_fileSize >= Config::MAX_FILE_SIZE) {
              file.close(); // Close the file handle before exiting
              // Set popup state
              TextEditorManager::GetInstance().SetShowFileTooLargePopup(true);

@@ -8,7 +8,7 @@ typedef struct {
     Locale lang = Locale::English;
     bool dev_options = false;
     bool image_filename = false;
-    bool multi_lang = false;
+    bool multi_lang = true;
     bool full_charset = false;
 } config_t;
 

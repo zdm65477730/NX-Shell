@@ -11,13 +11,13 @@
 #include "fs.hpp"
 #include "log.hpp"
 
-#define CONFIG_VERSION 5
+#define CONFIG_VERSION 6
 
 config_t cfg;
 
 namespace Config {
     static const char *config_path = "/switch/NX-Shell/config.json";
-    static const char *config_file = "{\n\t\"config_version\": %d,\n\t\"language\": %d,\n\t\"dev_options\": %d,\n\t\"image_filename\": %d,\n\t\"multi_lang\": %d,\n\t\"full_charset\": %d\n}";
+    static const char *config_file = "{\n\t\"config_version\": %d,\n\t\"language\": %d,\n\t\"dev_options\": %d,\n\t\"image_filename\": %d,\n\t\"multi_lang\": %d\n}";
     static int config_version_holder = 0;
     static const int buf_size = 128;
     static const std::pair<Locale, const char*> LocaleMap[] = {
@@ -64,7 +64,7 @@ namespace Config {
     int Save(config_t &config) {
         Result ret = 0;
         char *buf = new char[buf_size];
-        u64 len = std::snprintf(buf, buf_size, config_file, CONFIG_VERSION, locale2str(config.lang), config.dev_options, config.image_filename, config.multi_lang, config.full_charset);
+        u64 len = std::snprintf(buf, buf_size, config_file, CONFIG_VERSION, locale2str(config.lang), config.dev_options, config.image_filename, config.multi_lang);
 
         // Delete and re-create the file, we don't care about the return value here.
         fsFsDeleteFile(std::addressof(devices[FileSystemSDMC]), config_path);
@@ -88,7 +88,7 @@ namespace Config {
         delete[] buf;
         return 0;
     }
-    
+
     int Load(void) {
         Result ret = 0;
 
@@ -141,11 +141,6 @@ namespace Config {
             return Config::Save(cfg);
         }
 
-        cfg.lang = Locale::English;
-        json_t *language = json_object_get(root, "language");
-        if (language && json_is_string(language))
-            cfg.lang = str2locale(json_string_value(language));
-
         json_t *dev_options = json_object_get(root, "dev_options");
         cfg.dev_options = json_integer_value(dev_options);
 
@@ -154,9 +149,71 @@ namespace Config {
 
         json_t *multi_lang = json_object_get(root, "multi_lang");
         cfg.multi_lang = json_integer_value(multi_lang);
+        if (cfg.lang != Locale::English)
+            cfg.multi_lang = 1;
 
-        json_t *full_charset = json_object_get(root, "full_charset");
-        cfg.full_charset = json_integer_value(full_charset);
+        const auto type = appletGetAppletType();
+        if (type != AppletType_Application && type != AppletType_SystemApplication)
+            cfg.full_charset = 0;
+
+        json_t *language = json_object_get(root, "language");
+        if (language && json_is_string(language)) {
+            cfg.lang = str2locale(json_string_value(language));
+        } else {
+            if(R_SUCCEEDED(setInitialize())) {
+                u64 languageCode;
+                if (R_SUCCEEDED(setGetSystemLanguage(&languageCode))) {
+                    SetLanguage setLanguage{SetLanguage_ENUS};
+                    if (R_SUCCEEDED(setMakeLanguage(languageCode, &setLanguage))) {
+                        switch (setLanguage) {
+                        case SetLanguage_JA:
+                            cfg.lang = Locale::Japanese;
+                            break;
+                        case SetLanguage_FR:
+                        case SetLanguage_FRCA:
+                            cfg.lang = Locale::French;
+                            break;
+                        case SetLanguage_DE:
+                            cfg.lang = Locale::German;
+                            break;
+                        case SetLanguage_IT:
+                            cfg.lang = Locale::Italian;
+                            break;
+                        case SetLanguage_ES:
+                        case SetLanguage_ES419:
+                            cfg.lang = Locale::Spanish;
+                            break;
+                        case SetLanguage_ZHCN:
+                        case SetLanguage_ZHHANS:
+                            cfg.lang = Locale::SimplifiedChinese;
+                            break;
+                        case SetLanguage_KO:
+                            cfg.lang = Locale::Korean;
+                            break;
+                        case SetLanguage_NL:
+                            cfg.lang = Locale::Dutch;
+                            break;
+                        case SetLanguage_PT:
+                        case SetLanguage_PTBR:
+                            cfg.lang = Locale::Portuguese;
+                            break;
+                        case SetLanguage_RU:
+                            cfg.lang = Locale::Russian;
+                            break;
+                        case SetLanguage_ZHTW:
+                        case SetLanguage_ZHHANT:
+                            cfg.lang = Locale::TraditionalChinese;
+                            break;
+                        default:
+                            cfg.lang = Locale::English;   
+                            break;
+                        }
+                    }
+                }
+                setExit();
+            }
+            Config::Save(cfg);
+        }
 
         json_decref(root);
         return 0;

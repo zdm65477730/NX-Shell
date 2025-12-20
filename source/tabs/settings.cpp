@@ -105,14 +105,6 @@ namespace Tabs {
 
             Tabs::Separator();
 
-            // Full charset Checkbox
-            Tabs::Indent(strings[cfg.lang][Lang::SettingsFullCharsetTitle]);
-
-            if (ImGui::Checkbox(strings[cfg.lang][Lang::SettingsFullCharsetLogsToggle], std::addressof(cfg.full_charset)))
-                Config::Save(cfg);
-
-            Tabs::Separator();
-
             // About
             Tabs::Indent(strings[cfg.lang][Lang::SettingsAboutTitle]);
             

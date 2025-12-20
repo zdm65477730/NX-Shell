@@ -75,7 +75,6 @@ enum class Lang {
     SettingsImageViewTitle,
     SettingsDevOptsTitle,
     SettingsMultiLangTitle,
-    SettingsFullCharsetTitle,
     SettingsAboutTitle,
     SettingsCheckForUpdates,
     SettingsImageViewFilenameToggle,
