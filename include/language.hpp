@@ -3,7 +3,7 @@
 #include <unordered_map>
 
 enum class Locale {
-    Japanese,
+    Japanese = 0,
     English,
     French,
     German,
@@ -14,7 +14,9 @@ enum class Locale {
     Dutch,
     Portuguese,
     Russian,
-    TraditionalChinese
+    TraditionalChinese,
+
+    MaxCount
 };
 
 enum class Lang {
@@ -70,6 +72,18 @@ enum class Lang {
     SettingsTitle,
     SettingsSortTitle,
     SettingsLanguageTitle,
+    LanguageJapanese,
+    LanguageEnglish,
+    LanguageFrench,
+    LanguageGerman,
+    LanguageItalian,
+    LanguageSpanish,
+    LanguageSimplifiedChinese,
+    LanguageKorean,
+    LanguageDutch,
+    LanguagePortuguese,
+    LanguageRussian,
+    LanguageTraditionalChinese,
     SettingsUSBTitle,
     SettingsUSBUnmount,
     SettingsImageViewTitle,
@@ -142,6 +156,8 @@ enum class Lang {
     TextEditorStatusInsertNewLine,
     TextEditorControls,
     TextEditorExitPrompt,
+
+    MaxCount
 };
 
 extern std::unordered_map<Locale, std::unordered_map<Lang, const char *>> strings;

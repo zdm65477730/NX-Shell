@@ -29,38 +29,39 @@ namespace Tabs {
     
     void Settings(WindowData &data) {
         if (ImGui::BeginTabItem(strings[cfg.lang][Lang::SettingsTitle])) {
-            // Disable language settings for now (At least until it;s complete)
-            // if (ImGui::TreeNode(strings[cfg.lang][Lang::SettingsLanguageTitle])) {
-            //     const char *languages[] = {
-            //         " Japanese",
-            //         " English",
-            //         " French",
-            //         " German",
-            //         " Italian",
-            //         " Spanish",
-            //         " Simplified Chinese",
-            //         " Korean",
-            //         " Dutch",
-            //         " Portuguese",
-            //         " Russian",
-            //         " Traditional Chinese"
-            //     };
+            // Enable language settings
+            const Lang languageKeys[] = {
+                Lang::LanguageJapanese,
+                Lang::LanguageEnglish,
+                Lang::LanguageFrench,
+                Lang::LanguageGerman,
+                Lang::LanguageItalian,
+                Lang::LanguageSpanish,
+                Lang::LanguageSimplifiedChinese,
+                Lang::LanguageKorean,
+                Lang::LanguageDutch,
+                Lang::LanguagePortuguese,
+                Lang::LanguageRussian,
+                Lang::LanguageTraditionalChinese
+            };
+            if (ImGui::TreeNode(strings[cfg.lang][Lang::SettingsLanguageTitle])) {
+                ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
+                const int max_lang = static_cast<int>(Locale::MaxCount);
+                int current_lang = static_cast<int>(cfg.lang);
+                for (int i = 0; i < max_lang; i++) {
+                    std::string displayText = std::string(" ") + strings[cfg.lang][languageKeys[i]];
+                    if (ImGui::RadioButton(displayText.c_str(), &current_lang, i)) {
+                        cfg.lang = static_cast<Locale>(i);
+                        Config::Save(cfg);
+                    }
+                    if (i != (max_lang - 1)) {
+                        ImGui::Dummy(ImVec2(0.0f, 15.0f)); // Spacing
+                    }
+                }
+                ImGui::TreePop();
+            }
 
-            //     ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
-                
-            //     const int max_lang = 12;
-            //     for (int i = 0; i < max_lang; i++) {
-            //         if (ImGui::RadioButton(languages[i], &cfg.lang, i))
-            //             Config::Save(cfg);
-                    
-            //         if (i != (max_lang - 1))
-            //             ImGui::Dummy(ImVec2(0.0f, 15.0f)); // Spacing
-            //     }
-
-            //     ImGui::TreePop();
-            // }
-
-            // ImGui::Separator();
+            ImGui::Separator();
 
             // USB unmount
             ImGui::Indent(10.f);
