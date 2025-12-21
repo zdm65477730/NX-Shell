@@ -46,13 +46,15 @@ namespace Tabs {
             };
             if (ImGui::TreeNode(strings[cfg.lang][Lang::SettingsLanguageTitle])) {
                 ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
-                const int max_lang = static_cast<int>(Locale::MaxCount);
+                const int max_lang = sizeof(languageKeys) / sizeof(languageKeys[0]);
                 int current_lang = static_cast<int>(cfg.lang);
                 for (int i = 0; i < max_lang; i++) {
                     std::string displayText = std::string(" ") + strings[cfg.lang][languageKeys[i]];
                     if (ImGui::RadioButton(displayText.c_str(), &current_lang, i)) {
-                        cfg.lang = static_cast<Locale>(i);
-                        Config::Save(cfg);
+                        if (i >= 0 && i < static_cast<int>(Locale::MaxCount)) {
+                            cfg.lang = static_cast<Locale>(i);
+                            Config::Save(cfg);
+                        }
                     }
                     if (i != (max_lang - 1)) {
                         ImGui::Dummy(ImVec2(0.0f, 15.0f)); // Spacing
