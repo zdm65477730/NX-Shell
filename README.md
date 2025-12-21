@@ -16,6 +16,7 @@ NX Shell is a multi-purpose file manager for the Nintendo Switch that aims towar
 - Sorting options (Sort by name, date, size).
 - Display various images formats (BMP, GIF, JPG/JPEG, PGM, PPM, PNG, PSD, TGA and WEBP).
 - Browse devices such as safe, user, system and USB.
+- Full-Featured Text Editor
 
 # Credits:
 
@@ -23,3 +24,4 @@ NX Shell is a multi-purpose file manager for the Nintendo Switch that aims towar
 - **Dear ImGui developers and contributors** for the GUI.
 - **devkitPro maintainers and contributors** for libnx, devkitA64, and many other packages used by this project.
 - **DarkMatterCore** for libusbhsfs.
+- **joel16** as the original author.
