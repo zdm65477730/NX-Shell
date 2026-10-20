@@ -96,7 +96,6 @@ namespace Config {
         // Set boolean values (store as integers for compatibility with existing parsing logic)
         json_object_set_new(root, "dev_options", json_integer(config.dev_options ? 1 : 0));
         json_object_set_new(root, "image_filename", json_integer(config.image_filename ? 1 : 0));
-        json_object_set_new(root, "multi_lang", json_integer(config.multi_lang ? 1 : 0));
 
         // Serialize to JSON string (JSON_INDENT(4) for pretty printing with 4 spaces indent)
         char *json_str = json_dumps(root, JSON_INDENT(4));
@@ -302,19 +301,6 @@ namespace Config {
         json_t *language = json_object_get(root, "language");
         if (language && json_is_string(language))
             cfg.lang = str2locale(json_string_value(language));
-
-        // Parse multi_lang (add type check)
-        json_t *multi_lang = json_object_get(root, "multi_lang");
-        if (json_is_integer(multi_lang))
-            cfg.multi_lang = json_integer_value(multi_lang) != 0;
-        // Force multi_lang to 1 if language is not English
-        if (cfg.lang != Locale::English)
-            cfg.multi_lang = 1;
-
-        // Set full_charset to 0 if not running as application/system application
-        const auto type = appletGetAppletType();
-        if (type != AppletType_Application && type != AppletType_SystemApplication)
-            cfg.full_charset = 0;
 
         // Free JSON object
         json_decref(root);

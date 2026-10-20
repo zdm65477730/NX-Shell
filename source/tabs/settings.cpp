@@ -44,16 +44,36 @@ namespace Tabs {
                 Lang::LanguageRussian,
                 Lang::LanguageTraditionalChinese
             };
+
+            const char* langNativeName[] = {
+                "日本語",
+                "English",
+                "Français",
+                "Deutsch",
+                "Italiano",
+                "Español",
+                "简体中文",
+                "한국어",
+                "Nederlands",
+                "Português",
+                "Русский",
+                "繁體中文"
+            };
+
             if (ImGui::TreeNode(strings[cfg.lang][Lang::SettingsLanguageTitle])) {
                 ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
+                ImGui::TextDisabled("(Requires restart to apply language)");
+                ImGui::Dummy(ImVec2(0.0f, 5.0f));
+
                 const int max_lang = sizeof(languageKeys) / sizeof(languageKeys[0]);
-                int current_lang = static_cast<int>(cfg.lang);
+                static int selected_lang = static_cast<int>(cfg.lang);
                 for (int i = 0; i < max_lang; i++) {
-                    std::string displayText = std::string(" ") + strings[cfg.lang][languageKeys[i]];
-                    if (ImGui::RadioButton(displayText.c_str(), &current_lang, i)) {
-                        if (i >= 0 && i < static_cast<int>(Locale::MaxCount)) {
-                            cfg.lang = static_cast<Locale>(i);
-                            Config::Save(cfg);
+                    std::string displayText = std::string(" ") + langNativeName[i];
+                    if (ImGui::RadioButton(displayText.c_str(), &selected_lang, i)) {
+                        config_t new_cfg = cfg;
+                        if (selected_lang >= 0 && selected_lang < static_cast<int>(Locale::MaxCount)) {
+                            new_cfg.lang = static_cast<Locale>(selected_lang);
+                            Config::Save(new_cfg);
                         }
                     }
                     if (i != (max_lang - 1)) {
@@ -96,14 +116,6 @@ namespace Tabs {
             Tabs::Indent(strings[cfg.lang][Lang::SettingsDevOptsTitle]);
 
             if (ImGui::Checkbox(strings[cfg.lang][Lang::SettingsDevOptsLogsToggle], std::addressof(cfg.dev_options)))
-                Config::Save(cfg);
-
-            Tabs::Separator();
-
-            // Multi lang Checkbox
-            Tabs::Indent(strings[cfg.lang][Lang::SettingsMultiLangTitle]);
-
-            if (ImGui::Checkbox(strings[cfg.lang][Lang::SettingsMultiLangLogsToggle], std::addressof(cfg.multi_lang)))
                 Config::Save(cfg);
 
             Tabs::Separator();

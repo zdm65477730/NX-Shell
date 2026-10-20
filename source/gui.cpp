@@ -162,43 +162,127 @@ namespace GUI {
 
         if (!GUI::InitEGL(nwindowGetDefault()))
             return false;
-
         gladLoadGL();
-
         ImGui_ImplSwitch_Init("#version 130");
 
-        // Load nintendo font
-        PlFontData standard, extended, schinese, korean, tchinese;
-        static ImWchar extended_range[] = {0xE000, 0xE152};
+        AppletType applet_type = appletGetAppletType();
+        const bool is_applet = (applet_type != AppletType_Application && applet_type != AppletType_SystemApplication);
 
-        if (R_SUCCEEDED(plGetSharedFontByType(std::addressof(standard), PlSharedFontType_Standard)) &&
-            R_SUCCEEDED(plGetSharedFontByType(std::addressof(extended), PlSharedFontType_NintendoExt)) &&
-            R_SUCCEEDED(plGetSharedFontByType(std::addressof(schinese), PlSharedFontType_ChineseSimplified)) &&
-            R_SUCCEEDED(plGetSharedFontByType(std::addressof(tchinese), PlSharedFontType_ChineseTraditional)) &&
-            R_SUCCEEDED(plGetSharedFontByType(std::addressof(korean), PlSharedFontType_KO))) {
-            u8 *px = nullptr;
-            int w = 0, h = 0, bpp = 0;
-            ImFontConfig font_cfg;
+        PlFontData standard;
+        if (R_FAILED(plGetSharedFontByType(&standard, PlSharedFontType_Standard))) {
+            GUI::SetDefaultTheme();
+            return true;
+        }
 
-            font_cfg.FontDataOwnedByAtlas = false;
-            io.Fonts->AddFontFromMemoryTTF(standard.address, standard.size, 20.f, std::addressof(font_cfg), io.Fonts->GetGlyphRangesDefault());
-            if (cfg.multi_lang) {
-                font_cfg.MergeMode = true;
-                io.Fonts->AddFontFromMemoryTTF(extended.address, extended.size, 20.f, std::addressof(font_cfg), extended_range);
-                io.Fonts->AddFontFromMemoryTTF(korean.address, korean.size,   20.f, std::addressof(font_cfg), io.Fonts->GetGlyphRangesKorean());
-                if (cfg.full_charset)
-                    io.Fonts->AddFontFromMemoryTTF(schinese.address, schinese.size,   20.f, std::addressof(font_cfg), io.Fonts->GetGlyphRangesChineseFull());
-                else {
-                    io.Fonts->AddFontFromMemoryTTF(schinese.address, schinese.size,   20.f, std::addressof(font_cfg), io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
-                    io.Fonts->AddFontFromMemoryTTF(tchinese.address, tchinese.size,   20.f, std::addressof(font_cfg), io.Fonts->GetGlyphRangesChineseTraditionalCommon());
+        u8 *px = nullptr;
+        int w = 0, h = 0, bpp = 0;
+        ImFontConfig font_cfg;
+        font_cfg.FontDataOwnedByAtlas = false;
+
+        font_cfg.MergeMode = false;
+        io.Fonts->AddFontFromMemoryTTF(standard.address, standard.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesDefault());
+
+        font_cfg.MergeMode = true;
+        static const ImWchar extended_range[] = {0xE000, 0xE152, 0};
+        PlFontData extended;
+        if (R_SUCCEEDED(plGetSharedFontByType(&extended, PlSharedFontType_NintendoExt))) {
+            io.Fonts->AddFontFromMemoryTTF(extended.address, extended.size, 20.f, &font_cfg, extended_range);
+        }
+
+        // "日本語","English","Français","Deutsch","Italiano","Español","简体中文","한국어","Nederlands","Português","Русский","繁體中文"
+        static const ImWchar langListGlyphs[] = {
+            // langNativeName 语言选项文字
+            0x65E5,0x672C,0x8A9E,               // 日本語
+            0x7B80,0x4F53,0x4E2D,0x6587,        // 简体中文
+            0x7E41,0x9AD4,0x4E2D,0x6587,        // 繁體中文
+            0xD55C,0xAD6D,0xC5B4,               // 한국어
+            0x0420,0x0443,0x0441,0x0441,0x043A,0x0438,0x0439, // Русский
+            0, //终止符
+        };
+
+        io.Fonts->AddFontFromMemoryTTF(standard.address, standard.size, 20.f, &font_cfg, langListGlyphs);
+
+        if (is_applet)
+        {
+            switch(cfg.lang)
+            {
+                case Locale::English:
+                case Locale::French:
+                case Locale::German:
+                case Locale::Italian:
+                case Locale::Spanish:
+                case Locale::Dutch:
+                case Locale::Portuguese:
+                    break;
+                case Locale::Russian:
+                    io.Fonts->AddFontFromMemoryTTF(standard.address, standard.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesCyrillic());
+                    break;
+                case Locale::Japanese:
+                    io.Fonts->AddFontFromMemoryTTF(standard.address, standard.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesJapanese());
+                    break;
+                case Locale::Korean:
+                {
+                    PlFontData kofont;
+                    if(R_SUCCEEDED(plGetSharedFontByType(&kofont, PlSharedFontType_KO)))
+                    {
+                        io.Fonts->AddFontFromMemoryTTF(kofont.address, kofont.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesKorean());
+                    }
+                    break;
                 }
+                case Locale::SimplifiedChinese:
+                {
+                    PlFontData cnfont;
+                    if(R_SUCCEEDED(plGetSharedFontByType(&cnfont, PlSharedFontType_ChineseSimplified)))
+                    {
+                        io.Fonts->AddFontFromMemoryTTF(cnfont.address, cnfont.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
+                    }
+                    break;
+                }
+                case Locale::TraditionalChinese:
+                {
+                    PlFontData tcnfont;
+                    if(R_SUCCEEDED(plGetSharedFontByType(&tcnfont, PlSharedFontType_ChineseTraditional)))
+                    {
+                        io.Fonts->AddFontFromMemoryTTF(tcnfont.address, tcnfont.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesChineseTraditionalCommon());
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
+        } else {
+            io.Fonts->AddFontFromMemoryTTF(standard.address, standard.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesCyrillic());
+            io.Fonts->AddFontFromMemoryTTF(standard.address, standard.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesJapanese());
+
+            PlFontData kofont;
+            if(R_SUCCEEDED(plGetSharedFontByType(&kofont, PlSharedFontType_KO)))
+            {
+                io.Fonts->AddFontFromMemoryTTF(kofont.address, kofont.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesKorean());
             }
 
-            // build font atlas
-            io.Fonts->GetTexDataAsAlpha8(std::addressof(px), std::addressof(w), std::addressof(h), std::addressof(bpp));
-            io.Fonts->Flags |= ImFontAtlasFlags_NoPowerOfTwoHeight;
-            io.Fonts->Build();
+            PlFontData cnfont;
+            if(R_SUCCEEDED(plGetSharedFontByType(&cnfont, PlSharedFontType_ChineseSimplified)))
+            {
+                io.Fonts->AddFontFromMemoryTTF(cnfont.address, cnfont.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesChineseFull());
+            }
+
+            PlFontData tcnfont;
+            if(R_SUCCEEDED(plGetSharedFontByType(&tcnfont, PlSharedFontType_ChineseTraditional)))
+            {
+                io.Fonts->AddFontFromMemoryTTF(tcnfont.address, tcnfont.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesChineseTraditionalCommon());
+            }
         }
+
+        if (is_applet) {
+            io.Fonts->TexDesiredWidth = 1024;
+        } else {
+            io.Fonts->TexDesiredWidth = 2048;
+        }
+        io.Fonts->Flags |= ImFontAtlasFlags_NoPowerOfTwoHeight;
+
+        io.Fonts->GetTexDataAsAlpha8(&px, &w, &h, &bpp);
+        io.Fonts->Build();
+        io.Fonts->ClearInputData();
 
         GUI::SetDefaultTheme();
         return true;
