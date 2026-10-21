@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <memory>
 #include <switch.h>
+#include <language.hpp>
 
 #include "windows.hpp"
 #include "config.hpp"
@@ -189,99 +190,59 @@ namespace GUI {
             io.Fonts->AddFontFromMemoryTTF(extended.address, extended.size, 20.f, &font_cfg, extended_range);
         }
 
-        // "日本語","English","Français","Deutsch","Italiano","Español","简体中文","한국어","Nederlands","Português","Русский","繁體中文"
-        static const ImWchar langListGlyphs[] = {
-            // langNativeName 语言选项文字
-            0x65E5,0x672C,0x8A9E,               // 日本語
-            0x7B80,0x4F53,0x4E2D,0x6587,        // 简体中文
-            0x7E41,0x9AD4,0x4E2D,0x6587,        // 繁體中文
-            0xD55C,0xAD6D,0xC5B4,               // 한국어
-            0x0420,0x0443,0x0441,0x0441,0x043A,0x0438,0x0439, // Русский
-            0, //终止符
-        };
+        // ----- Language-option list: every title must render under ANY active language. -----
+        // Glyphs are requested explicitly as {start,end} pairs from the font that actually
+        // contains each script (Standard already holds kana + kanji + Cyrillic; Simplified /
+        // Traditional Chinese and Korean live in their dedicated shared fonts), so no title
+        // glyph is ever dropped and no accidental huge range is baked.
+        PlFontData kofont, cnfont, tcnfont;
+        const bool hasKO = R_SUCCEEDED(plGetSharedFontByType(&kofont,  PlSharedFontType_KO));
+        const bool hasCN = R_SUCCEEDED(plGetSharedFontByType(&cnfont,  PlSharedFontType_ChineseSimplified));
+        const bool hasTC = R_SUCCEEDED(plGetSharedFontByType(&tcnfont, PlSharedFontType_ChineseTraditional));
 
-        io.Fonts->AddFontFromMemoryTTF(standard.address, standard.size, 20.f, &font_cfg, langListGlyphs);
+        static const ImWchar titleStdGlyphs[] = {
+            0x65E5,0x65E5, 0x672C,0x672C, 0x8A9E,0x8A9E,                 // 日本語
+            0x0420,0x0420, 0x0438,0x043A, 0x0441,0x0441, 0x0443,0x0443,   // Русский
+            0,
+        };
+        static const ImWchar titleSCGlyphs[] = {0x7B80,0x7B80, 0x4F53,0x4F53, 0x4E2D,0x4E2D, 0x6587,0x6587, 0}; // 简体中文
+        static const ImWchar titleTCGlyphs[] = {0x7E41,0x7E41, 0x9AD4,0x9AD4, 0x4E2D,0x4E2D, 0x6587,0x6587, 0}; // 繁體中文
+        static const ImWchar titleKOGlyphs[] = {0xD55C,0xD55C, 0xAD6D,0xAD6D, 0xC5B4,0xC5B4, 0};               // 한국어
+        io.Fonts->AddFontFromMemoryTTF(standard.address, standard.size, 20.f, &font_cfg, titleStdGlyphs);
+        if (hasCN) io.Fonts->AddFontFromMemoryTTF(cnfont.address,  cnfont.size,  20.f, &font_cfg, titleSCGlyphs);
+        if (hasTC) io.Fonts->AddFontFromMemoryTTF(tcnfont.address, tcnfont.size, 20.f, &font_cfg, titleTCGlyphs);
+        if (hasKO) io.Fonts->AddFontFromMemoryTTF(kofont.address,  kofont.size,  20.f, &font_cfg, titleKOGlyphs);
+
+        io.Fonts->AddFontFromMemoryTTF(standard.address, standard.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesCyrillic());
+        io.Fonts->AddFontFromMemoryTTF(standard.address, standard.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesJapanese());
+        if (hasTC) io.Fonts->AddFontFromMemoryTTF(tcnfont.address, tcnfont.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesChineseTraditionalCommon());
 
         if (is_applet)
         {
-            switch(cfg.lang)
-            {
-                case Locale::English:
-                case Locale::French:
-                case Locale::German:
-                case Locale::Italian:
-                case Locale::Spanish:
-                case Locale::Dutch:
-                case Locale::Portuguese:
-                    break;
-                case Locale::Russian:
-                    io.Fonts->AddFontFromMemoryTTF(standard.address, standard.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesCyrillic());
-                    break;
-                case Locale::Japanese:
-                    io.Fonts->AddFontFromMemoryTTF(standard.address, standard.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesJapanese());
-                    break;
-                case Locale::Korean:
-                {
-                    PlFontData kofont;
-                    if(R_SUCCEEDED(plGetSharedFontByType(&kofont, PlSharedFontType_KO)))
-                    {
-                        io.Fonts->AddFontFromMemoryTTF(kofont.address, kofont.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesKorean());
-                    }
-                    break;
-                }
-                case Locale::SimplifiedChinese:
-                {
-                    PlFontData cnfont;
-                    if(R_SUCCEEDED(plGetSharedFontByType(&cnfont, PlSharedFontType_ChineseSimplified)))
-                    {
-                        io.Fonts->AddFontFromMemoryTTF(cnfont.address, cnfont.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
-                    }
-                    break;
-                }
-                case Locale::TraditionalChinese:
-                {
-                    PlFontData tcnfont;
-                    if(R_SUCCEEDED(plGetSharedFontByType(&tcnfont, PlSharedFontType_ChineseTraditional)))
-                    {
-                        io.Fonts->AddFontFromMemoryTTF(tcnfont.address, tcnfont.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesChineseTraditionalCommon());
-                    }
-                    break;
-                }
-                default:
-                    break;
-            }
-        } else {
-            io.Fonts->AddFontFromMemoryTTF(standard.address, standard.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesCyrillic());
-            io.Fonts->AddFontFromMemoryTTF(standard.address, standard.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesJapanese());
-
-            PlFontData kofont;
-            if(R_SUCCEEDED(plGetSharedFontByType(&kofont, PlSharedFontType_KO)))
-            {
-                io.Fonts->AddFontFromMemoryTTF(kofont.address, kofont.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesKorean());
-            }
-
-            PlFontData cnfont;
-            if(R_SUCCEEDED(plGetSharedFontByType(&cnfont, PlSharedFontType_ChineseSimplified)))
-            {
-                io.Fonts->AddFontFromMemoryTTF(cnfont.address, cnfont.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesChineseFull());
-            }
-
-            PlFontData tcnfont;
-            if(R_SUCCEEDED(plGetSharedFontByType(&tcnfont, PlSharedFontType_ChineseTraditional)))
-            {
-                io.Fonts->AddFontFromMemoryTTF(tcnfont.address, tcnfont.size, 20.f, &font_cfg, io.Fonts->GetGlyphRangesChineseTraditionalCommon());
-            }
-        }
-
-        if (is_applet) {
+            if (hasKO) io.Fonts->AddFontFromMemoryTTF(kofont.address,  kofont.size,  20.f, &font_cfg, io.Fonts->GetGlyphRangesKoreanCommon());
+            if (hasCN) io.Fonts->AddFontFromMemoryTTF(cnfont.address,  cnfont.size,  20.f, &font_cfg, io.Fonts->GetGlyphRangesChineseSimplifiedCommon());
             io.Fonts->TexDesiredWidth = 1024;
         } else {
+            // Application mode: generous atlas budget -> load every script for maximum coverage.
+            if (hasKO) io.Fonts->AddFontFromMemoryTTF(kofont.address,  kofont.size,  20.f, &font_cfg, io.Fonts->GetGlyphRangesKorean());
+            if (hasCN) io.Fonts->AddFontFromMemoryTTF(cnfont.address,  cnfont.size,  20.f, &font_cfg, io.Fonts->GetGlyphRangesChineseFull());
             io.Fonts->TexDesiredWidth = 2048;
         }
-        io.Fonts->Flags |= ImFontAtlasFlags_NoPowerOfTwoHeight;
 
+        io.Fonts->Flags |= ImFontAtlasFlags_NoPowerOfTwoHeight;
         io.Fonts->GetTexDataAsAlpha8(&px, &w, &h, &bpp);
         io.Fonts->Build();
+
+        // Temporary diagnostic (needs cfg.dev_options): report the real atlas footprint so the
+        // applet multi-language load can be validated objectively from /switch/NX-Shell/debug.log.
+        int total_glyphs = 0;
+        for (int i = 0; i < io.Fonts->Fonts.Size; i++)
+            total_glyphs += io.Fonts->Fonts[i]->Glyphs.Size;
+        Log::Error("[fontdiag] mode=%s fonts=%d glyphs=%d tex=%dx%d alpha8=%.2fMB",
+                   is_applet ? "applet" : "application",
+                   io.Fonts->Fonts.Size, total_glyphs, w, h,
+                   (double)w * (double)h / 1048576.0);
+
         io.Fonts->ClearInputData();
 
         GUI::SetDefaultTheme();

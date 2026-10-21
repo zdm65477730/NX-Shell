@@ -62,7 +62,17 @@ namespace Tabs {
 
             if (ImGui::TreeNode(strings[cfg.lang][Lang::SettingsLanguageTitle])) {
                 ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Spacing
-                ImGui::TextDisabled("(Requires restart to apply language)");
+                const char* restartHint = "Requires restart to apply language";
+                switch (cfg.lang)
+                {
+                    case Locale::SimplifiedChinese: restartHint = "需要重启才能应用语言"; break;
+                    case Locale::TraditionalChinese: restartHint = "需要重新啟動才能套用語言"; break;
+                    case Locale::Japanese: restartHint = "再起動して言語が適用されます"; break;
+                    case Locale::Korean: restartHint = "재시작해야 언어가 적용됩니다"; break;
+                    case Locale::Russian: restartHint = "Требуется перезапуск для применения языка"; break;
+                    default: break;
+                }
+                ImGui::TextDisabled(restartHint);
                 ImGui::Dummy(ImVec2(0.0f, 5.0f));
 
                 const int max_lang = sizeof(languageKeys) / sizeof(languageKeys[0]);
