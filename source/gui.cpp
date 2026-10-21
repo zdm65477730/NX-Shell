@@ -232,17 +232,6 @@ namespace GUI {
         io.Fonts->Flags |= ImFontAtlasFlags_NoPowerOfTwoHeight;
         io.Fonts->GetTexDataAsAlpha8(&px, &w, &h, &bpp);
         io.Fonts->Build();
-
-        // Temporary diagnostic (needs cfg.dev_options): report the real atlas footprint so the
-        // applet multi-language load can be validated objectively from /switch/NX-Shell/debug.log.
-        int total_glyphs = 0;
-        for (int i = 0; i < io.Fonts->Fonts.Size; i++)
-            total_glyphs += io.Fonts->Fonts[i]->Glyphs.Size;
-        Log::Error("[fontdiag] mode=%s fonts=%d glyphs=%d tex=%dx%d alpha8=%.2fMB",
-                   is_applet ? "applet" : "application",
-                   io.Fonts->Fonts.Size, total_glyphs, w, h,
-                   (double)w * (double)h / 1048576.0);
-
         io.Fonts->ClearInputData();
 
         GUI::SetDefaultTheme();
